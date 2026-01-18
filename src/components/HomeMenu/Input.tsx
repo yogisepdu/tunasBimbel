@@ -1,6 +1,6 @@
 import React from "react";
 import { View, TextInput, StyleSheet, TextInputProps } from "react-native";
-import Colors from "../theme/colors";
+import Colors from "../../theme/colors";
 
 interface InputProps extends TextInputProps {}
 

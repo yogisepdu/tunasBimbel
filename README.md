@@ -10,22 +10,22 @@ Aplikasi ini bertujuan untuk membantu peserta belajar secara **mandiri**, **ters
 
 ## 🚀 Fitur Utama
 
-* 🔐 Sistem autentikasi (Login & Register)
-* 🎓 Materi bimbingan beasiswa kelapa sawit
-* 📝 Tes online & latihan soal
-* 📊 Evaluasi hasil tes
-* 📱 UI mobile-friendly & responsif
-* ⚡ Performa optimal dengan React Native
+- 🔐 Sistem autentikasi (Login & Register)
+- 🎓 Materi bimbingan beasiswa kelapa sawit
+- 📝 Tes online & latihan soal
+- 📊 Evaluasi hasil tes
+- 📱 UI mobile-friendly & responsif
+- ⚡ Performa optimal dengan React Native
 
 ---
 
 ## 🛠️ Teknologi yang Digunakan
 
-* **React Native**
-* **JavaScript / TypeScript**
-* **React Navigation**
-* **Axios / Fetch API**
-* **Android (APK Build)**
+- **React Native**
+- **JavaScript / TypeScript**
+- **React Navigation**
+- **Axios / Fetch API**
+- **Android (APK Build)**
 
 ---
 
@@ -33,9 +33,9 @@ Aplikasi ini bertujuan untuk membantu peserta belajar secara **mandiri**, **ters
 
 Menyediakan platform bimbingan belajar digital yang:
 
-* Mudah diakses kapan saja
-* Membantu persiapan tes beasiswa kelapa sawit
-* Mendukung pembelajaran berbasis mobile
+- Mudah diakses kapan saja
+- Membantu persiapan tes beasiswa kelapa sawit
+- Mendukung pembelajaran berbasis mobile
 
 ---
 
@@ -62,9 +62,9 @@ npx react-native run-android
 
 Kontribusi sangat terbuka. Silakan lakukan:
 
-* Fork repository ini
-* Buat branch baru
-* Pull Request
+- Fork repository ini
+- Buat branch baru
+- Pull Request
 
 Atau laporkan **issue** jika menemukan bug atau memiliki ide pengembangan.
 
@@ -76,4 +76,4 @@ Project ini menggunakan lisensi **MIT**.
 
 ---
 
-✨ *Dikembangkan menggunakan React Native untuk mendukung pembelajaran digital yang modern dan mudah diakses.*
+✨ _Dikembangkan menggunakan React Native untuk mendukung pembelajaran digital yang modern dan mudah diakses._

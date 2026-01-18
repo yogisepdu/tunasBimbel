@@ -1,4 +1,6 @@
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/types";
 import React, { useState } from "react";
 import {
   View,
@@ -8,16 +10,19 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import Input from "../components/Input";
+import Input from "../components/HomeMenu/Input";
 import Colors from "../theme/colors";
 
-const LoginScreen: React.FC = () => {
+type Props = NativeStackScreenProps<RootStackParamList, "Login">;
+
+const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
   const handleLogin = (): void => {
-    console.log("Email:", email);
-    console.log("Password:", password);
+    // console.log("Email:", email);
+    // console.log("Password:", password);
+    navigation.replace("MainTabs");
   };
 
   return (
@@ -76,7 +81,7 @@ const LoginScreen: React.FC = () => {
 
         {/* Footer */}
         <Text style={styles.footer}>
-          © 2026 Tunas Bimbel. All rights reserved.yogi sepdu dehiya
+          © 2026 Tunas Bimbel. All rights reserved.
         </Text>
       </ScrollView>
     </SafeAreaView>
