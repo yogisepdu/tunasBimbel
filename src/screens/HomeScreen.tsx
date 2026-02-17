@@ -7,6 +7,8 @@ import AktivitasTab from "./AktivitasTab";
 import ProfileTab from "./ProfileTab";
 import Colors from "../theme/colors";
 
+import ProfileStack from "../navigation/ProfileStack";
+
 const Tab = createBottomTabNavigator();
 
 export default function HomeScreen() {
@@ -61,7 +63,7 @@ export default function HomeScreen() {
       />
       <Tab.Screen
         name="ProfileTab"
-        component={ProfileTab}
+        component={ProfileStack}
         options={{ title: "Profil" }}
       />
     </Tab.Navigator>

@@ -59,4 +59,6 @@ export type RootStackParamList = {
   };
 
   Kalender: undefined;
+
+  EditProfile: undefined;
 };
