@@ -16,6 +16,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.yogisepdu.tunasbimbel",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -25,6 +26,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0a5df63e-434d-477f-b521-7ed6947ba0f7"
+      }
+    },
+    "owner": "yosep27",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

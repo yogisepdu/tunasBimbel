@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { EbookType } from "../../data/ebookData";
+import { EbookType } from "../../types/EbookType";
 
 type Props = {
   item: EbookType;
@@ -12,7 +12,7 @@ export default function EbookListItem({ item, onPress }: Props) {
   return (
     <TouchableOpacity onPress={onPress} style={styles.container}>
       <View style={[styles.icon, { backgroundColor: item.color }]}>
-        <Ionicons name={item.icon} size={20} color="#fff" />
+        <Ionicons name={item.icon ?? "book"} size={20} color="#fff" />
       </View>
 
       <View style={styles.content}>
@@ -21,7 +21,7 @@ export default function EbookListItem({ item, onPress }: Props) {
         <Text style={styles.date}>{item.date}</Text>
       </View>
 
-      <Text style={styles.duration}>{item.duration}</Text>
+      <Text style={styles.duration}>{item.duration ?? "-"}</Text>
     </TouchableOpacity>
   );
 }

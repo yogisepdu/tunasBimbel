@@ -1,7 +1,7 @@
 import { ScrollView, Text } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../navigation/types";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import { quizDummy } from "../../data/quizDummy";
 import { soalDummy } from "../../data/soalDummy";
@@ -13,10 +13,12 @@ import PembahasanSection from "../../components/Results/PembahasanSection";
 import PeringkatSection from "../../components/Results/PeringkatSection";
 import { resultStyles } from "../../assets/styles/resultStyles";
 
+import { markDone } from "../../services/progressService";
+
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 
 export default function ResultScreen({ route }: Props) {
-  const { score, source, userAnswers } = route.params;
+  const { score, source, userAnswers, quizId, chapterId } = route.params;
 
   const [activeTab, setActiveTab] = useState<
     "Statistik" | "Pembahasan" | "Peringkat"
@@ -33,6 +35,13 @@ export default function ResultScreen({ route }: Props) {
     () => calculateStatistics(questions, userAnswers),
     [questions, userAnswers],
   );
+
+  // 🔥 simpan progress quiz
+  useEffect(() => {
+    if (source === "quiz" && chapterId) {
+      markDone(chapterId, quizId, "kuis");
+    }
+  }, []);
 
   return (
     <ScrollView style={resultStyles.container}>

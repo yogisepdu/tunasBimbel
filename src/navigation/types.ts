@@ -45,6 +45,7 @@ export type RootStackParamList = {
 
   Result: {
     quizId: string;
+    chapterId?: string;
     source: "quiz" | "soal";
     title: string;
     total: number;

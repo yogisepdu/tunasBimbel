@@ -2,6 +2,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
 import {
   View,
   Text,
@@ -18,11 +21,54 @@ type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (): void => {
-    // console.log("Email:", email);
-    // console.log("Password:", password);
-    navigation.replace("MainTabs");
+  const handleLogin = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch("http://10.0.2.2:8000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Toast.show({
+          type: "error",
+          text1: "Login Gagal",
+          text2: data.message,
+        });
+        return;
+      }
+
+      // 🔥 SIMPAN TOKEN
+      await AsyncStorage.setItem("token", data.token);
+
+      // 🔥 SIMPAN USER
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+
+      Toast.show({
+        type: "success",
+        text1: "Login Berhasil",
+        text2: `Selamat datang ${data.user.name}`,
+      });
+
+      navigation.replace("MainTabs");
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Tidak dapat terhubung ke server",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

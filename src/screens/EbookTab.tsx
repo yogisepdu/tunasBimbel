@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { FlatList } from "react-native";
+import { FlatList, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
 
 import Header from "../components/EBook/Header";
 import EbookTab from "../components/EBook";
 import EbookListItem from "../components/EBook/EbookListItem";
-import { ebookData } from "../data/ebookData";
+
+import { getEbooks } from "../services/ebookService";
+import { EbookType } from "../types/EbookType";
+
 
 function extractTotalSoal(duration: string): number {
   const match = duration.match(/\d+/);
@@ -20,13 +23,41 @@ export default function EbookTabScreen() {
   const initialTab = route.params?.initialInnerTab ?? "materi";
   const [tab, setTab] = useState<"materi" | "soal">(initialTab);
 
+  const [ebooks, setEbooks] = useState<EbookType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await getEbooks();
+        setEbooks(data);
+      } catch (error) {
+        console.log("API error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   useEffect(() => {
     if (route.params?.initialInnerTab) {
       setTab(route.params.initialInnerTab);
     }
   }, [route.params?.initialInnerTab]);
 
-  const filtered = ebookData.filter((i) => i.type === tab);
+  const filtered = (ebooks ?? []).filter((i) => i.type === tab);
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <Text>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>

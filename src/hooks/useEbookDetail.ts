@@ -1,14 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
-import { chapterDetailData } from "../data/chapterDetailData";
+import { getChapterDetail } from "../services/chapterService";
+import { ChapterDetailItem } from "../types/ChapterType";
 
 export function useEbookDetail(chapterId: string) {
   const [tab, setTab] = useState<"video" | "rangkuman" | "kuis">("video");
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
-  const chapterItems = useMemo(
-    () => chapterDetailData.filter((i) => i.chapterId === chapterId),
-    [chapterId],
-  );
+  const [chapterItems, setChapterItems] = useState<ChapterDetailItem[]>([]);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // ================= LOAD DATA =================
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await getChapterDetail(chapterId);
+        setChapterItems(data);
+      } catch (e) {
+        console.log("chapter detail error:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [chapterId]);
+
+  // ================= FILTER =================
 
   const videoItems = useMemo(
     () => chapterItems.filter((i) => i.type === "video"),
@@ -20,33 +38,46 @@ export function useEbookDetail(chapterId: string) {
     [chapterItems, tab],
   );
 
+  // ================= HEADER VIDEO =================
+
   const headerVideo = useMemo(() => {
-    return activeVideoId
-      ? videoItems.find((v) => v.youtubeId === activeVideoId)
-      : null;
+    if (!activeVideoId) return videoItems[0];
+
+    return videoItems.find((v) => v.youtubeId === activeVideoId);
   }, [activeVideoId, videoItems]);
+
+  // ================= PROGRESS =================
 
   const progress = useMemo(() => {
     const total = chapterItems.length;
     const done = chapterItems.filter((i) => i.isDone).length;
-    return total === 0 ? 0 : Math.round((done / total) * 100);
+
+    if (total === 0) return 0;
+
+    return Math.round((done / total) * 100);
   }, [chapterItems]);
 
-  useEffect(() => {
-    if (!activeVideoId && videoItems.length > 0) {
-      setActiveVideoId(videoItems[0].youtubeId!);
-    }
-  }, [activeVideoId, videoItems]);
+  // ================= MARK DONE (REALTIME) =================
+
+  const markItemDone = (itemId: string) => {
+    setChapterItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, isDone: true } : item,
+      ),
+    );
+  };
 
   return {
     tab,
     setTab,
+    chapterItems,
+    filteredItems,
+    videoItems,
+    headerVideo,
     activeVideoId,
     setActiveVideoId,
-    chapterItems,
-    videoItems,
-    filteredItems,
-    headerVideo,
     progress,
+    loading,
+    markItemDone,
   };
 }
