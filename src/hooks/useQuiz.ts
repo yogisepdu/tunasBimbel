@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { quizMeta } from "../data/quizCard";
-import { quizDummy } from "../data/quizDummy";
-import { soalDummy } from "../data/soalDummy";
+import { getQuizQuestions } from "../services/quizService";
 
 type QuizSource = "quiz" | "soal";
 
-const STORAGE_KEY = (quizId: string, source: QuizSource) =>
-  `quiz_progress_${source}_${quizId}`;
+const STORAGE_KEY = (chapterId: string, source: QuizSource) =>
+  `quiz_progress_${source}_${chapterId}`;
 
 type SavedProgress = {
   currentIndex: number;
@@ -16,56 +14,98 @@ type SavedProgress = {
 };
 
 export function useQuiz(
-  quizId: string,
+  chapterId: string,
   source: QuizSource,
   onTimeUp?: (result: any) => void,
 ) {
-  const questions = source === "soal" ? soalDummy : quizDummy;
-  const meta = quizMeta;
+  const [meta, setMeta] = useState({
+    id: "",
+    title: "",
+    duration: 0,
+  });
 
+  const [questions, setQuestions] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [timeLeft, setTimeLeft] = useState(meta.duration);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   const hasSubmitted = useRef(false);
 
-  // 🔄 RESUME
+  // ================= LOAD QUIZ =================
+  useEffect(() => {
+    const loadQuiz = async () => {
+      try {
+        const numericChapterId =
+          typeof chapterId === "string"
+            ? Number(chapterId.replace("c-", ""))
+            : chapterId;
+
+        const res = await getQuizQuestions(numericChapterId);
+
+        setMeta({
+          id: `quiz-${res.quiz_id}`,
+          title: res.title,
+          duration: res.duration * 60, // menit → detik
+        });
+
+        // console.log("quiz questions:", res.questions);
+
+        setQuestions(res.questions || []);
+        setTimeLeft(res.duration * 60);
+      } catch (err) {
+        console.log("quiz load error:", err);
+      }
+    };
+
+    loadQuiz();
+  }, [chapterId]);
+
+  // ================= RESUME PROGRESS =================
   useEffect(() => {
     (async () => {
-      const saved = await AsyncStorage.getItem(STORAGE_KEY(quizId, source));
+      const saved = await AsyncStorage.getItem(
+        STORAGE_KEY(chapterId, source),
+      );
+
       if (saved) {
         const data: SavedProgress = JSON.parse(saved);
+
         setCurrentIndex(data.currentIndex);
         setAnswers(data.answers);
         setTimeLeft(data.timeLeft);
       }
     })();
-  }, [quizId, source]);
+  }, [chapterId, source]);
 
-  // ⏱ TIMER
+  // ================= TIMER =================
   useEffect(() => {
+    if (!meta.duration) return;
+
     const timer = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timer);
+
           if (!hasSubmitted.current) {
             hasSubmitted.current = true;
             const result = submitQuiz();
             onTimeUp?.(result);
           }
+
           return 0;
         }
+
         return t - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [meta.duration]);
 
-  // 💾 AUTO SAVE
+  // ================= AUTO SAVE =================
   useEffect(() => {
     AsyncStorage.setItem(
-      STORAGE_KEY(quizId, source),
+      STORAGE_KEY(chapterId, source),
       JSON.stringify({
         currentIndex,
         answers,
@@ -82,16 +122,16 @@ export function useQuiz(
   };
 
   const clearProgress = async () => {
-    await AsyncStorage.removeItem(STORAGE_KEY(quizId, source));
+    await AsyncStorage.removeItem(STORAGE_KEY(chapterId, source));
   };
 
-  // ✅ FINAL SUBMIT (INI KUNCI)
+  // ================= SUBMIT QUIZ =================
   const submitQuiz = () => {
     let correct = 0;
     let wrong = 0;
     let empty = 0;
 
-    const userAnswers = questions.map((q: any, index) => {
+    const userAnswers = questions.map((q, index) => {
       const selected = answers[index];
 
       if (!selected) empty++;
@@ -99,17 +139,19 @@ export function useQuiz(
       else wrong++;
 
       return {
-        questionId: q.id ?? index + 1,
+        questionId: q.id,
         selectedAnswer: selected,
       };
     });
 
-    const score = Math.round((correct / questions.length) * 100);
+    const score = questions.length
+      ? Math.round((correct / questions.length) * 100)
+      : 0;
 
     clearProgress();
 
     return {
-      quizId,
+      chapterId,
       source,
       title: meta.title,
       total: questions.length,
@@ -117,13 +159,13 @@ export function useQuiz(
       wrong,
       empty,
       score,
-      userAnswers, // 🔥 INI YANG SEBELUMNYA HILANG
+      userAnswers,
     };
   };
 
   return {
     meta,
-    question: questions[currentIndex],
+    question: questions.length > 0 ? questions[currentIndex] : null,
     total: questions.length,
     currentIndex,
     answers,

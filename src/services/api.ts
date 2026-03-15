@@ -1,6 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "http://10.0.2.2:8000/api";
+export const API_URL = "http://10.0.2.2:8000";
+
+// 🔥 helper untuk file storage
+export const storageUrl = (path?: string) => {
+  if (!path) return null;
+
+  if (path.startsWith("http")) {
+    return path;
+  }
+
+  return `${API_URL}${path}`;
+};
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
@@ -10,11 +21,11 @@ type ApiOptions = {
 export async function apiFetch(endpoint: string, options: ApiOptions = {}) {
   const token = await AsyncStorage.getItem("token");
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(`${API_URL}/api${endpoint}`, {
     method: options.method ?? "GET",
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json", // 🔴 WAJIB ADA
+      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
@@ -22,16 +33,23 @@ export async function apiFetch(endpoint: string, options: ApiOptions = {}) {
 
   const text = await response.text();
 
-  try {
-    const json = JSON.parse(text);
+  let json: any;
 
-    if (!response.ok) {
-      throw new Error(json.message || "API Error");
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error("Server tidak merespon dengan benar");
+  }
+
+  if (!response.ok) {
+    if (response.status === 401 && token) {
+      await AsyncStorage.removeItem("token");
+      await AsyncStorage.removeItem("user");
+      throw new Error("Session habis, silakan login kembali");
     }
 
-    return json;
-  } catch (error) {
-    console.log("API Response bukan JSON:", text);
-    throw error;
+    throw new Error(json.message || "Terjadi kesalahan");
   }
+
+  return json;
 }

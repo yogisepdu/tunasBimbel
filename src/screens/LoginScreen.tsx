@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import Input from "../components/HomeMenu/Input";
 import Colors from "../theme/colors";
+import { apiFetch } from "../services/api";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
@@ -27,25 +28,13 @@ const LoginScreen = ({ navigation }: Props) => {
     try {
       setLoading(true);
 
-      const response = await fetch("http://10.0.2.2:8000/api/login", {
+      const data = await apiFetch("/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
+        body: {
+          email,
+          password,
         },
-        body: JSON.stringify({ email, password }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        Toast.show({
-          type: "error",
-          text1: "Login Gagal",
-          text2: data.message,
-        });
-        return;
-      }
 
       // 🔥 SIMPAN TOKEN
       await AsyncStorage.setItem("token", data.token);
@@ -60,11 +49,11 @@ const LoginScreen = ({ navigation }: Props) => {
       });
 
       navigation.replace("MainTabs");
-    } catch (error) {
+    } catch (error: any) {
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Tidak dapat terhubung ke server",
+        text1: "Login Gagal",
+        text2: error.message || "Terjadi kesalahan",
       });
     } finally {
       setLoading(false);

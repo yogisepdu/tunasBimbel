@@ -4,7 +4,6 @@ import { ChapterDetailItem } from "../types/ChapterType";
 
 export function useEbookDetail(chapterId: string) {
   const [tab, setTab] = useState<"video" | "rangkuman" | "kuis">("video");
-
   const [chapterItems, setChapterItems] = useState<ChapterDetailItem[]>([]);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -14,10 +13,19 @@ export function useEbookDetail(chapterId: string) {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await getChapterDetail(chapterId);
-        setChapterItems(data);
+        setLoading(true);
+
+        const numericId =
+          typeof chapterId === "string"
+            ? chapterId.replace("c-", "")
+            : chapterId;
+
+        const data = await getChapterDetail(numericId);
+
+        setChapterItems(data || []);
       } catch (e) {
         console.log("chapter detail error:", e);
+        setChapterItems([]);
       } finally {
         setLoading(false);
       }
@@ -41,20 +49,23 @@ export function useEbookDetail(chapterId: string) {
   // ================= HEADER VIDEO =================
 
   const headerVideo = useMemo(() => {
+    if (!videoItems.length) return null;
+
     if (!activeVideoId) return videoItems[0];
 
-    return videoItems.find((v) => v.youtubeId === activeVideoId);
+    return (
+      videoItems.find((v) => v.youtubeId === activeVideoId) || videoItems[0]
+    );
   }, [activeVideoId, videoItems]);
 
   // ================= PROGRESS =================
 
   const progress = useMemo(() => {
-    const total = chapterItems.length;
+    if (!chapterItems.length) return 0;
+
     const done = chapterItems.filter((i) => i.isDone).length;
 
-    if (total === 0) return 0;
-
-    return Math.round((done / total) * 100);
+    return Math.round((done / chapterItems.length) * 100);
   }, [chapterItems]);
 
   // ================= MARK DONE (REALTIME) =================

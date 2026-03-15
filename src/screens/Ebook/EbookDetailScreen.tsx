@@ -25,6 +25,12 @@ export default function EbookDetailScreen() {
 
   const { chapterId, title, subtitle } = route.params;
 
+  // pastikan id numeric untuk API
+  const numericChapterId =
+    typeof chapterId === "string"
+      ? Number(chapterId.replace("c-", ""))
+      : chapterId;
+
   const {
     tab,
     setTab,
@@ -35,7 +41,7 @@ export default function EbookDetailScreen() {
     progress,
     loading,
     markItemDone,
-  } = useEbookDetail(chapterId);
+  } = useEbookDetail(numericChapterId);
 
   if (loading) {
     return (
@@ -68,7 +74,7 @@ export default function EbookDetailScreen() {
       <ChapterTab active={tab} onChange={setTab} />
 
       <FlatList
-        data={filteredItems}
+        data={filteredItems ?? []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 20 }}
         renderItem={({ item }) => {
@@ -85,43 +91,44 @@ export default function EbookDetailScreen() {
               onPress={async () => {
                 if (isLocked) return;
 
-                // ================= VIDEO =================
+                try {
+                  // ================= VIDEO =================
 
-                if (item.type === "video") {
-                  setActiveVideoId(item.youtubeId!);
+                  if (item.type === "video") {
+                    setActiveVideoId(item.youtubeId!);
 
-                  markItemDone(item.id); // realtime update
+                    markItemDone(item.id);
 
-                  const videoId = Number(item.id.replace("v-", ""));
+                    const videoId = Number(item.id.replace("v-", ""));
 
-                  markVideoDone(chapterId, videoId); // API background
-                }
+                    await markVideoDone(numericChapterId, videoId);
+                  }
 
-                // ================= PDF =================
+                  // ================= PDF =================
 
-                if (item.type === "rangkuman") {
-                  markItemDone(item.id);
+                  if (item.type === "rangkuman") {
+                    markItemDone(item.id);
 
-                  const pdfId = Number(item.id.replace("r-", ""));
+                    const pdfId = Number(item.id.replace("r-", ""));
 
-                  markPdfDone(chapterId, pdfId);
+                    await markPdfDone(numericChapterId, pdfId);
 
-                  navigation.navigate("MateriDetail", {
-                    title: item.title,
-                    pdfUrl: item.pdfUrl!,
-                  });
-                }
+                    navigation.navigate("MateriDetail", {
+                      title: item.title,
+                      pdfUrl: item.pdfUrl!,
+                    });
+                  }
 
-                // ================= QUIZ =================
+                  // ================= QUIZ =================
 
-                if (item.type === "kuis") {
-                  const quizId = Number(item.id.replace("q-", ""));
-
-                  navigation.navigate("Quiz", {
-                    quizId,
-                    chapterId,
-                    source: "quiz",
-                  });
+                  if (item.type === "kuis") {
+                    navigation.navigate("Quiz", {
+                      chapterId: numericChapterId,
+                      source: "quiz",
+                    });
+                  }
+                } catch (err) {
+                  console.log("progress error:", err);
                 }
               }}
             />

@@ -123,4 +123,12 @@ export const quizStyles = StyleSheet.create({
   navAnswered: {
     borderColor: "#7ED957",
   },
+
+  questionImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    marginVertical: 12,
+    backgroundColor: "#f2f2f2",
+  },
 });
