@@ -6,17 +6,19 @@ type Props = {
 };
 
 export default function PembahasanSection({ questions, userAnswers }: Props) {
+  // 🔥 mapping cepat & aman
+  const answerMap = Object.fromEntries(
+    userAnswers.map((a: any) => [a.questionId, a.selectedAnswer]),
+  );
+
   return (
     <>
       {questions.map((q: any, index: number) => (
         <PembahasanItem
-          key={index}
+          key={q.id ?? index}
           nomor={index + 1}
           question={q}
-          userAnswer={
-            userAnswers.find((a) => a.questionId === (q.id ?? index + 1))
-              ?.selectedAnswer
-          }
+          userAnswer={answerMap[q.id]}
         />
       ))}
     </>

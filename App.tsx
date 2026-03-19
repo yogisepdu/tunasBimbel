@@ -9,6 +9,7 @@ import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 
 import { RootStackParamList } from "./src/navigation/types";
+import { navigationRef } from "./src/navigation/navigationRef";
 
 import LoginScreen from "./src/screens/LoginScreen";
 import HomeScreen from "./src/screens/HomeScreen";
@@ -71,7 +72,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <Stack.Navigator
           initialRouteName={initialRoute}
           screenOptions={{ headerShown: false }}

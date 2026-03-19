@@ -19,7 +19,7 @@ export function useQuiz(
   onTimeUp?: (result: any) => void,
 ) {
   const [meta, setMeta] = useState({
-    id: "",
+    id: 0,
     title: "",
     duration: 0,
   });
@@ -43,12 +43,10 @@ export function useQuiz(
         const res = await getQuizQuestions(numericChapterId);
 
         setMeta({
-          id: `quiz-${res.quiz_id}`,
+          id: res.quiz_id,
           title: res.title,
-          duration: res.duration * 60, // menit → detik
+          duration: res.duration * 60,
         });
-
-        // console.log("quiz questions:", res.questions);
 
         setQuestions(res.questions || []);
         setTimeLeft(res.duration * 60);
@@ -63,9 +61,7 @@ export function useQuiz(
   // ================= RESUME PROGRESS =================
   useEffect(() => {
     (async () => {
-      const saved = await AsyncStorage.getItem(
-        STORAGE_KEY(chapterId, source),
-      );
+      const saved = await AsyncStorage.getItem(STORAGE_KEY(chapterId, source));
 
       if (saved) {
         const data: SavedProgress = JSON.parse(saved);
@@ -152,6 +148,7 @@ export function useQuiz(
 
     return {
       chapterId,
+      quizId: meta.id,
       source,
       title: meta.title,
       total: questions.length,

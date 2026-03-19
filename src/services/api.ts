@@ -1,15 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { resetToLogin } from "../navigation/navigationRef"; // ⬅️ penting
 
 export const API_URL = "http://10.0.2.2:8000";
 
-// 🔥 helper untuk file storage
 export const storageUrl = (path?: string) => {
   if (!path) return null;
-
-  if (path.startsWith("http")) {
-    return path;
-  }
-
+  if (path.startsWith("http")) return path;
   return `${API_URL}${path}`;
 };
 
@@ -41,13 +37,23 @@ export async function apiFetch(endpoint: string, options: ApiOptions = {}) {
     throw new Error("Server tidak merespon dengan benar");
   }
 
-  if (!response.ok) {
-    if (response.status === 401 && token) {
+  // 🔥 BEDAKAN LOGIN vs SESSION EXPIRED
+  if (response.status === 401) {
+    if (token) {
+      // ✅ ini session expired
       await AsyncStorage.removeItem("token");
       await AsyncStorage.removeItem("user");
-      throw new Error("Session habis, silakan login kembali");
-    }
 
+      resetToLogin();
+
+      throw new Error("SESSION_EXPIRED");
+    } else {
+      // ✅ ini login gagal
+      throw new Error(json.message || "Email atau password salah");
+    }
+  }
+
+  if (!response.ok) {
     throw new Error(json.message || "Terjadi kesalahan");
   }
 

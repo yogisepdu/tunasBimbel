@@ -7,14 +7,20 @@ type Props = {
   nomor: number;
 };
 
-export default function PembahasanItem({ question, userAnswer, nomor }: Props) {
+export default function PembahasanItem({
+  question,
+  userAnswer,
+  nomor,
+}: Props) {
+  const correctAnswer = question.correctAnswer ?? question.correct_answer;
+
   return (
     <View style={resultStyles.card}>
       <Text style={resultStyles.nomor}>Soal {nomor}</Text>
       <Text style={resultStyles.soal}>{question.text}</Text>
 
       {question.options.map((opt: any) => {
-        const isCorrect = opt.key === question.correctAnswer;
+        const isCorrect = opt.key === correctAnswer;
         const isUser = opt.key === userAnswer;
 
         return (
@@ -33,8 +39,14 @@ export default function PembahasanItem({ question, userAnswer, nomor }: Props) {
         );
       })}
 
+      {!userAnswer && (
+        <Text style={{ color: "gray", marginTop: 5 }}>
+          Tidak dijawab
+        </Text>
+      )}
+
       <Text style={resultStyles.answer}>
-        Jawaban benar: {question.correctAnswer}
+        Jawaban benar: {correctAnswer}
       </Text>
     </View>
   );

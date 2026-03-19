@@ -11,25 +11,28 @@ type Props = {
 export default function ResultTabs({ activeTab, onChange }: Props) {
   return (
     <View style={resultStyles.tabContainer}>
-      {tabs.map((tab) => (
-        <TouchableOpacity
-          key={tab}
-          style={[
-            resultStyles.tabItem,
-            activeTab === tab && resultStyles.tabActive,
-          ]}
-          onPress={() => onChange(tab)}
-        >
-          <Text
-            style={[
-              resultStyles.tabText,
-              activeTab === tab && resultStyles.tabTextActive,
-            ]}
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab;
+
+        return (
+          <TouchableOpacity
+            key={tab}
+            style={resultStyles.tabItem}
+            onPress={() => onChange(tab)}
           >
-            {tab}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={[
+                resultStyles.tabText,
+                isActive && resultStyles.tabTextActive,
+              ]}
+            >
+              {tab}
+            </Text>
+
+            {isActive && <View style={resultStyles.tabUnderline} />}
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }

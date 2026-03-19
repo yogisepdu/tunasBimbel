@@ -5,7 +5,11 @@ import { resultStyles } from "../../assets/styles/resultStyles";
 type Props = {
   score: number;
   isPassed: boolean;
-  stats: any;
+  stats: {
+    benar: number;
+    salah: number;
+    kosong: number;
+  };
 };
 
 export default function StatistikSection({ score, isPassed, stats }: Props) {
@@ -13,7 +17,14 @@ export default function StatistikSection({ score, isPassed, stats }: Props) {
     <>
       <View style={resultStyles.card}>
         <Text style={resultStyles.cardTitle}>Skor Akhir</Text>
-        <Text style={resultStyles.score}>{score}</Text>
+        <Text
+          style={[
+            resultStyles.score,
+            { color: isPassed ? "#4CAF50" : "#F44336" },
+          ]}
+        >
+          {score}
+        </Text>
       </View>
 
       <View style={resultStyles.card}>

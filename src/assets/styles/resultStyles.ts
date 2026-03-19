@@ -94,4 +94,10 @@ export const resultStyles = StyleSheet.create({
     fontWeight: "600",
     color: "#4CAF50",
   },
+  tabUnderline: {
+    height: 3,
+    backgroundColor: "#4CAF50",
+    marginTop: 6,
+    borderRadius: 2,
+  },
 });

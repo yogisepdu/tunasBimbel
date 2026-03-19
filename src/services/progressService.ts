@@ -20,7 +20,9 @@ export const markPdfDone = (chapterId: string, pdfId: number) => {
   });
 };
 
-export const markQuizDone = (chapterId: string, quizId: number) => {
+export const markQuizDone = async (chapterId: number, quizId: number) => {
+  // console.log("CALL API markQuizDone", chapterId, quizId);
+
   return apiFetch("/chapter-progress", {
     method: "POST",
     body: {

@@ -25,35 +25,37 @@ const LoginScreen = ({ navigation }: Props) => {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Email dan password wajib diisi",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
       const data = await apiFetch("/login", {
         method: "POST",
         body: {
-          email,
+          email: email.trim(),
           password,
         },
       });
 
-      // 🔥 SIMPAN TOKEN
       await AsyncStorage.setItem("token", data.token);
-
-      // 🔥 SIMPAN USER
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
-
-      Toast.show({
-        type: "success",
-        text1: "Login Berhasil",
-        text2: `Selamat datang ${data.user.name}`,
-      });
 
       navigation.replace("MainTabs");
     } catch (error: any) {
+      if (error.message === "SESSION_EXPIRED") return;
+
       Toast.show({
         type: "error",
         text1: "Login Gagal",
-        text2: error.message || "Terjadi kesalahan",
+        text2: error.message,
       });
     } finally {
       setLoading(false);
