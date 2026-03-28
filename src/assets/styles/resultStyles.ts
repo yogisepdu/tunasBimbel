@@ -100,4 +100,51 @@ export const resultStyles = StyleSheet.create({
     marginTop: 6,
     borderRadius: 2,
   },
+  podiumContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    marginBottom: 20,
+  },
+
+  podiumItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+
+  podiumBox: {
+    width: "80%",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  podiumFirst: {
+    height: 120,
+    backgroundColor: "#FACC15",
+  },
+
+  podiumSecond: {
+    height: 90,
+    backgroundColor: "#E5E7EB",
+  },
+
+  podiumThird: {
+    height: 80,
+    backgroundColor: "#FDBA74",
+  },
+
+  podiumName: {
+    fontWeight: "bold",
+    marginTop: 6,
+  },
+
+  podiumScore: {
+    fontSize: 12,
+  },
+
+  podiumMedal: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
 });

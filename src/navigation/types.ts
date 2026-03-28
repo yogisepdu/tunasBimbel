@@ -30,29 +30,38 @@ export type RootStackParamList = {
     youtubeId: string;
   };
 
+  // 🔥 FIX BESAR
   Quiz: {
-    quizId: string;
-    chapterId?: string;
     source: "quiz" | "soal";
+
+    // quiz
+    chapterId?: string;
+    quizId?: number;
+
+    // soal
+    setId?: number;
   };
 
   SoalWarning: {
-    soalId: string;
+    soalId: number;
     title: string;
     duration: string;
     totalSoal: number;
   };
 
   Result: {
-    quizId: string;
-    chapterId?: string;
     source: "quiz" | "soal";
+
+    quizId: number; // universal id
+    setId?: number; // 🔥 TAMBAHAN
+
     title: string;
     total: number;
     correct: number;
     wrong: number;
     empty: number;
     score: number;
+
     userAnswers: {
       questionId: number;
       selectedAnswer?: string;
@@ -60,6 +69,5 @@ export type RootStackParamList = {
   };
 
   Kalender: undefined;
-
   EditProfile: undefined;
 };

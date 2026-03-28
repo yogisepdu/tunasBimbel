@@ -7,11 +7,7 @@ type Props = {
   nomor: number;
 };
 
-export default function PembahasanItem({
-  question,
-  userAnswer,
-  nomor,
-}: Props) {
+export default function PembahasanItem({ question, userAnswer, nomor }: Props) {
   const correctAnswer = question.correctAnswer ?? question.correct_answer;
 
   return (
@@ -40,14 +36,10 @@ export default function PembahasanItem({
       })}
 
       {!userAnswer && (
-        <Text style={{ color: "gray", marginTop: 5 }}>
-          Tidak dijawab
-        </Text>
+        <Text style={{ color: "gray", marginTop: 5 }}>Tidak dijawab</Text>
       )}
 
-      <Text style={resultStyles.answer}>
-        Jawaban benar: {correctAnswer}
-      </Text>
+      <Text style={resultStyles.answer}>Jawaban benar: {correctAnswer}</Text>
     </View>
   );
 }

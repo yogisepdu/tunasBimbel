@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FlatList, Text } from "react-native";
+import { FlatList, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
 
@@ -8,8 +8,8 @@ import EbookTab from "../components/EBook";
 import EbookListItem from "../components/EBook/EbookListItem";
 
 import { getEbooks } from "../services/ebookService";
+import { apiFetch } from "../services/api";
 import { EbookType } from "../types/EbookType";
-
 
 function extractTotalSoal(duration: string): number {
   const match = duration.match(/\d+/);
@@ -23,38 +23,85 @@ export default function EbookTabScreen() {
   const initialTab = route.params?.initialInnerTab ?? "materi";
   const [tab, setTab] = useState<"materi" | "soal">(initialTab);
 
-  const [ebooks, setEbooks] = useState<EbookType[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 🔥 CACHE PER TAB
+  const [materiData, setMateriData] = useState<EbookType[]>([]);
+  const [soalData, setSoalData] = useState<EbookType[]>([]);
 
+  const [loadingMateri, setLoadingMateri] = useState(true);
+  const [loadingSoal, setLoadingSoal] = useState(true);
+
+  // ================= LOAD MATERI (ONCE) =================
   useEffect(() => {
-    const loadData = async () => {
+    const loadMateri = async () => {
       try {
         const data = await getEbooks();
-        setEbooks(data);
+        setMateriData(data);
       } catch (error) {
-        console.log("API error:", error);
+        console.log("Materi error:", error);
       } finally {
-        setLoading(false);
+        setLoadingMateri(false);
       }
     };
 
-    loadData();
+    loadMateri();
   }, []);
 
+  // ================= LOAD SOAL (ONCE) =================
+  useEffect(() => {
+    const loadSoal = async () => {
+      try {
+        const data = await apiFetch("/soal-sections");
+
+        const mapped: EbookType[] = data.flatMap((section: any) =>
+          section.items.map((item: any) => ({
+            id: item.id.toString(),
+            title: item.title,
+            mapel: section.title,
+            type: "soal",
+            duration: item.soal,
+          })),
+        );
+
+        setSoalData(mapped);
+      } catch (error) {
+        console.log("Soal error:", error);
+      } finally {
+        setLoadingSoal(false);
+      }
+    };
+
+    loadSoal();
+  }, []);
+
+  // ================= HANDLE INITIAL TAB =================
   useEffect(() => {
     if (route.params?.initialInnerTab) {
       setTab(route.params.initialInnerTab);
     }
   }, [route.params?.initialInnerTab]);
 
-  const filtered = (ebooks ?? []).filter((i) => i.type === tab);
+  // ================= DATA ACTIVE =================
+  const data = tab === "materi" ? materiData : soalData;
+  const loading = tab === "materi" ? loadingMateri : loadingSoal;
 
-  if (loading) {
+  // ================= LOADING =================
+  if (loading && data.length === 0) {
     return (
       <SafeAreaView
         style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
       >
-        <Text>Loading...</Text>
+        <ActivityIndicator />
+      </SafeAreaView>
+    );
+  }
+
+  // ================= EMPTY =================
+  if (!loading && data.length === 0) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <Text>Tidak ada data {tab}</Text>
       </SafeAreaView>
     );
   }
@@ -66,7 +113,7 @@ export default function EbookTabScreen() {
       <EbookTab active={tab} onChange={setTab} />
 
       <FlatList
-        data={filtered}
+        data={data}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 20 }}
         renderItem={({ item }) => (

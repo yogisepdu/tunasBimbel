@@ -9,19 +9,37 @@ type Props = {
 };
 
 export default function EbookListItem({ item, onPress }: Props) {
+  const isSoal = item.type === "soal";
+
+  // 🔥 AUTO HANDLE ICON & COLOR
+  const iconName = isSoal ? "create" : (item.icon ?? "leaf-outline");
+
+  const bgColor = isSoal ? "#22C55E" : (item.color ?? "#F59E0B");
+
   return (
     <TouchableOpacity onPress={onPress} style={styles.container}>
-      <View style={[styles.icon, { backgroundColor: item.color }]}>
-        <Ionicons name={item.icon ?? "book"} size={20} color="#fff" />
+      {/* ICON */}
+      <View style={[styles.icon, { backgroundColor: bgColor }]}>
+        <Ionicons name={iconName as any} size={20} color="#fff" />
       </View>
 
+      {/* CONTENT */}
       <View style={styles.content}>
         <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subject}>{item.subject}</Text>
-        <Text style={styles.date}>{item.date}</Text>
+
+        {/* 🔥 FIX: mapel kamu namanya beda */}
+        <Text style={styles.subject}>{item.mapel ?? item.subject}</Text>
+
+        {/* 🔥 kalau belum ada tanggal dari API */}
+        <Text style={styles.date}>
+          {item.date ?? "Senin, 18 Februari 2026"}
+        </Text>
       </View>
 
-      <Text style={styles.duration}>{item.duration ?? "-"}</Text>
+      {/* RIGHT TEXT */}
+      <Text style={styles.duration}>
+        {isSoal ? `${item.duration ?? 0} Soal` : (item.duration ?? "-")}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -33,9 +51,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   icon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 48, // 🔥 lebih besar
+    height: 48,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
@@ -45,11 +63,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
   subject: {
     fontSize: 14,
     color: "#6B7280",
+    marginTop: 2,
   },
   date: {
     fontSize: 13,
@@ -57,7 +76,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   duration: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#6B7280",
   },
 });

@@ -14,3 +14,7 @@ export const getQuizQuestions = async (chapterId: number) => {
 
   return res;
 };
+
+export const checkQuizProgress = async (chapterId: number) => {
+  return await apiFetch(`/quiz-progress/${chapterId}`);
+};

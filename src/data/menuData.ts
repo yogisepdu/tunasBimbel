@@ -6,16 +6,21 @@ export type MenuBadge = "NEW" | "HOT" | undefined;
 export type MenuItemType = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  route: keyof RootStackParamList;
+  route?: keyof RootStackParamList;
   params?: {
     targetTab: string;
     initialInnerTab?: "materi" | "soal";
   };
   badge?: MenuBadge;
+  externalKey?: string;
 };
 
 export const menus: MenuItemType[] = [
-  { label: "Peta Seleksi", icon: "map", route: "PetaSeleksi" },
+  {
+    label: "Peta Seleksi",
+    icon: "map",
+    externalKey: "peta_seleksi",
+  },
   {
     label: "Latsol",
     icon: "pencil",
@@ -34,11 +39,19 @@ export const menus: MenuItemType[] = [
   {
     label: "Informasi Beasiswa",
     icon: "school",
-    route: "Beasiswa",
+    externalKey: "informasi_beasiswa",
     badge: "HOT",
   },
-  { label: "Informasi Kampus", icon: "business", route: "Kalender" },
-  { label: "Grup Mentoring", icon: "people", route: "GrupGratis" },
+  {
+    label: "Informasi Kampus",
+    icon: "business",
+    externalKey: "informasi_kampus",
+  },
+  {
+    label: "Grup Mentoring",
+    icon: "people",
+    externalKey: "grup_mentoring",
+  },
   { label: "Analisis Skor", icon: "analytics", route: "Analisis" },
   { label: "Kalender", icon: "calendar", route: "Kalender" },
 ];

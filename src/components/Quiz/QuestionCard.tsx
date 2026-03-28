@@ -27,7 +27,9 @@ export default function QuestionCard({
         </Text>
       </View>
 
-      <Text style={quizStyles.questionText}>{question.text}</Text>
+      <Text style={quizStyles.questionText}>
+        {question.text || question.question}
+      </Text>
 
       <Image
         source={{ uri: imageUri }}
@@ -42,9 +44,9 @@ export default function QuestionCard({
         }}
       />
 
-      {question.options.map((opt: any) => (
+      {question.options.map((opt: any, index: number) => (
         <OptionItem
-          key={opt.key}
+          key={opt.key ?? index} // ✅ SAFE
           label={opt.key}
           text={opt.text}
           selected={selectedAnswer === opt.key}

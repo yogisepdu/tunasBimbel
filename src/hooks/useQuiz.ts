@@ -1,20 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getQuizQuestions } from "../services/quizService";
+import { apiFetch } from "../services/api";
 
 type QuizSource = "quiz" | "soal";
 
-const STORAGE_KEY = (chapterId: string, source: QuizSource) =>
+const STORAGE_KEY = (chapterId: string | number, source: QuizSource) =>
   `quiz_progress_${source}_${chapterId}`;
 
-type SavedProgress = {
-  currentIndex: number;
-  answers: Record<number, string>;
-  timeLeft: number;
-};
-
 export function useQuiz(
-  chapterId: string,
+  chapterId: string | number,
   source: QuizSource,
   onTimeUp?: (result: any) => void,
 ) {
@@ -31,16 +26,65 @@ export function useQuiz(
 
   const hasSubmitted = useRef(false);
 
-  // ================= LOAD QUIZ =================
+  // ================= LOAD =================
   useEffect(() => {
     const loadQuiz = async () => {
       try {
-        const numericChapterId =
+        const id = Number(
           typeof chapterId === "string"
-            ? Number(chapterId.replace("c-", ""))
-            : chapterId;
+            ? chapterId.replace("c-", "")
+            : chapterId,
+        );
 
-        const res = await getQuizQuestions(numericChapterId);
+        // console.log("🔥 FETCH SOAL ID:", id, "SOURCE:", source);
+
+        // ❌ GUARD biar gak error lagi
+        if (!id || isNaN(id)) {
+          console.log("❌ ID INVALID:", chapterId);
+          return;
+        }
+
+        // ================= SOAL =================
+        if (source === "soal") {
+          const res = await apiFetch(`/soal-sets/${id}/questions`);
+
+          const mapped = res.questions.map((q: any) => ({
+            id: q.id,
+            text: q.text,
+            options: q.options.map((opt: any) => ({
+              key: opt.key,
+              text: opt.text,
+            })),
+            correctAnswer: q.correctAnswer,
+          }));
+
+          setQuestions(mapped);
+
+          setMeta({
+            id: res.set_id ?? id,
+            title: res.title ?? "Try Out",
+            duration: (res.duration ?? 0) * 60,
+          });
+
+          setTimeLeft((res.duration ?? 0) * 60);
+
+          return;
+        }
+
+        // ================= QUIZ =================
+        const res = await getQuizQuestions(id);
+
+        const mapped = (res.questions || []).map((q: any) => ({
+          id: q.id,
+          text: q.text,
+          options: (q.options || []).map((opt: any) => ({
+            key: opt.key ?? opt.option_key ?? opt.label,
+            text: opt.text ?? opt.option_text ?? opt.value,
+          })),
+          correctAnswer: q.correctAnswer ?? q.correct_answer,
+        }));
+
+        setQuestions(mapped);
 
         setMeta({
           id: res.quiz_id,
@@ -48,7 +92,6 @@ export function useQuiz(
           duration: res.duration * 60,
         });
 
-        setQuestions(res.questions || []);
         setTimeLeft(res.duration * 60);
       } catch (err) {
         console.log("quiz load error:", err);
@@ -56,16 +99,17 @@ export function useQuiz(
     };
 
     loadQuiz();
-  }, [chapterId]);
+  }, [chapterId, source]);
 
-  // ================= RESUME PROGRESS =================
+  // ================= RESUME (QUIZ ONLY) =================
   useEffect(() => {
+    if (source !== "quiz") return;
+
     (async () => {
       const saved = await AsyncStorage.getItem(STORAGE_KEY(chapterId, source));
 
       if (saved) {
-        const data: SavedProgress = JSON.parse(saved);
-
+        const data = JSON.parse(saved);
         setCurrentIndex(data.currentIndex);
         setAnswers(data.answers);
         setTimeLeft(data.timeLeft);
@@ -98,8 +142,10 @@ export function useQuiz(
     return () => clearInterval(timer);
   }, [meta.duration]);
 
-  // ================= AUTO SAVE =================
+  // ================= SAVE (QUIZ ONLY) =================
   useEffect(() => {
+    if (source !== "quiz") return;
+
     AsyncStorage.setItem(
       STORAGE_KEY(chapterId, source),
       JSON.stringify({
@@ -110,6 +156,7 @@ export function useQuiz(
     );
   }, [currentIndex, answers, timeLeft]);
 
+  // ================= LOGIC =================
   const selectAnswer = (opt: string) => {
     setAnswers((prev) => ({
       ...prev,
@@ -117,11 +164,6 @@ export function useQuiz(
     }));
   };
 
-  const clearProgress = async () => {
-    await AsyncStorage.removeItem(STORAGE_KEY(chapterId, source));
-  };
-
-  // ================= SUBMIT QUIZ =================
   const submitQuiz = () => {
     let correct = 0;
     let wrong = 0;
@@ -144,11 +186,10 @@ export function useQuiz(
       ? Math.round((correct / questions.length) * 100)
       : 0;
 
-    clearProgress();
-
     return {
       chapterId,
-      quizId: meta.id,
+      quizId: meta.id, // 🔥 ini jadi soal_set_id juga
+      setId: source === "soal" ? meta.id : undefined, // 🔥 AUTO ISI
       source,
       title: meta.title,
       total: questions.length,
@@ -162,7 +203,7 @@ export function useQuiz(
 
   return {
     meta,
-    question: questions.length > 0 ? questions[currentIndex] : null,
+    question: questions[currentIndex],
     total: questions.length,
     currentIndex,
     answers,

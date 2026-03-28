@@ -1,7 +1,8 @@
-import { ScrollView, Text, ActivityIndicator } from "react-native";
+import { ScrollView, Text, ActivityIndicator, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../navigation/types";
 import { useMemo, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { calculateStatistics } from "../../utils/statisticHelper";
 
@@ -10,15 +11,26 @@ import StatistikSection from "../../components/Results/StatistikSection";
 import PembahasanSection from "../../components/Results/PembahasanSection";
 import PeringkatSection from "../../components/Results/PeringkatSection";
 import { resultStyles } from "../../assets/styles/resultStyles";
-import { saveQuizResult } from "../../services/quizResultService";
 
 import { markQuizDone } from "../../services/progressService";
 import { getQuizQuestions } from "../../services/quizService";
+import { apiFetch } from "../../services/api";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 
+// 🔥 HELPER NORMALISASI
+const normalizeQuestion = (q: any) => ({
+  id: q.id,
+  text: q.text,
+  options: (q.options || []).map((opt: any) => ({
+    key: opt.key ?? opt.option_key ?? opt.label,
+    text: opt.text ?? opt.option_text ?? opt.value,
+  })),
+  correctAnswer: q.correctAnswer ?? q.correct_answer,
+});
+
 export default function ResultScreen({ route }: Props) {
-  const { score, source, userAnswers, quizId, chapterId } = route.params;
+  const { score, source, userAnswers, quizId, chapterId, setId } = route.params;
 
   const [activeTab, setActiveTab] = useState<
     "Statistik" | "Pembahasan" | "Peringkat"
@@ -26,122 +38,171 @@ export default function ResultScreen({ route }: Props) {
 
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [resultData, setResultData] = useState<any>(null);
 
-  const isPassed = score >= 70;
+  const soalSetId = Number(setId);
+  const quizChapterId =
+    typeof chapterId === "string"
+      ? Number(chapterId.replace("c-", ""))
+      : Number(chapterId);
 
-  // ================= LOAD QUESTIONS FROM API =================
+  // ================= FINAL DATA (WAJIB DI ATAS) =================
+  const finalScore = resultData?.score ?? score ?? 0;
+  const finalAnswers = resultData?.userAnswers ?? userAnswers ?? [];
+
+  // ================= LOAD USER =================
+  useEffect(() => {
+    (async () => {
+      const u = await AsyncStorage.getItem("user");
+      if (u) setUser(JSON.parse(u));
+    })();
+  }, []);
+
+  // console.log("🔥 PARAMS RESULT:", {
+  //   chapterId,
+  //   quizId,
+  //   source,
+  // });
+  // ================= LOAD RESULT =================
+  useEffect(() => {
+    const loadResult = async () => {
+      try {
+        if (source === "quiz") {
+          if (!quizChapterId || isNaN(quizChapterId)) {
+            console.log("❌ INVALID quizChapterId:", chapterId);
+            setLoading(false);
+            return;
+          }
+
+          const res = await apiFetch(`/quiz-progress/${quizChapterId}`);
+
+          if (res?.has_done && res?.result) {
+            setResultData({
+              score: res.result.score,
+              userAnswers: (res.result.answers || []).map((a: any) => ({
+                questionId: a.questionId ?? a.question_id,
+                selectedAnswer: a.selectedAnswer ?? a.answer,
+              })),
+            });
+          }
+        }
+
+        if (source === "soal") {
+          if (!soalSetId) return;
+
+          const res = await apiFetch(`/soal-progress/${soalSetId}`);
+
+          if (res?.has_done && res?.result) {
+            setResultData({
+              score: res.result.score,
+              userAnswers: (res.result.answers || []).map((a: any) => ({
+                questionId: a.questionId ?? a.question_id,
+                selectedAnswer: a.selectedAnswer ?? a.answer,
+              })),
+            });
+          }
+        }
+      } catch (err) {
+        console.log("❌ load result error:", err);
+      }
+    };
+
+    loadResult();
+  }, [source, chapterId, setId]);
+
+  // ================= LOAD QUESTIONS =================
   useEffect(() => {
     const loadQuestions = async () => {
       try {
-        if (!chapterId) return;
+        if (source === "soal") {
+          if (!soalSetId) return;
 
-        const numericChapterId =
-          typeof chapterId === "string"
-            ? Number(chapterId.replace("c-", ""))
-            : chapterId;
+          const res = await apiFetch(`/soal-sets/${soalSetId}/questions`);
+          setQuestions((res.questions || []).map(normalizeQuestion));
+          return;
+        }
 
-        const res = await getQuizQuestions(numericChapterId);
+        if (!quizChapterId || isNaN(quizChapterId)) {
+          console.log("❌ INVALID quizChapterId:", chapterId);
+          setLoading(false);
+          return;
+        }
 
-        setQuestions(res.questions || []);
+        const res = await getQuizQuestions(quizChapterId);
+        setQuestions((res?.questions || []).map(normalizeQuestion));
       } catch (err) {
-        console.log("load questions error:", err);
+        console.log("❌ load questions error:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (source === "quiz") {
-      loadQuestions();
-    }
-  }, []);
+    loadQuestions();
+  }, [source, setId, chapterId]);
 
-  // ================= HITUNG STATISTIK =================
+  const isPassed = finalScore >= 70;
+
+  // ================= STAT =================
   const stats = useMemo(() => {
     if (!questions.length) {
       return { benar: 0, salah: 0, kosong: 0 };
     }
 
-    return calculateStatistics(questions, userAnswers);
-  }, [questions, userAnswers]);
+    return calculateStatistics(questions, finalAnswers);
+  }, [questions, finalAnswers]);
 
-  // ================= SIMPAN PROGRESS =================
-  useEffect(() => {
-    if (source !== "quiz") return;
-    if (!chapterId || !quizId) return;
-
-    const saveProgress = async () => {
-      try {
-        const numericChapterId =
-          typeof chapterId === "string"
-            ? Number(chapterId.replace("c-", ""))
-            : chapterId;
-
-        const numericQuizId =
-          typeof quizId === "string"
-            ? Number(quizId.replace("quiz-", ""))
-            : quizId;
-
-        await markQuizDone(numericChapterId, numericQuizId);
-      } catch (err) {
-        console.log("ERROR markQuizDone:", err);
-      }
-    };
-
-    saveProgress();
-  }, []);
-
+  // ================= PROGRESS =================
   useEffect(() => {
     if (source !== "quiz") return;
     if (!quizId) return;
-    if (!questions.length) return;
 
-    const saveResult = async () => {
-      try {
-        const numericQuizId =
-          typeof quizId === "string"
-            ? Number(quizId.replace("quiz-", ""))
-            : quizId;
+    markQuizDone(chapterId, quizId);
+  }, []);
 
-        await saveQuizResult({
-          quiz_id: numericQuizId,
-          score,
-          correct: stats.benar,
-          wrong: stats.salah,
-          empty: stats.kosong,
-        });
-
-        console.log("✅ Result tersimpan");
-      } catch (err) {
-        console.log("❌ Gagal simpan result:", err);
-      }
-    };
-
-    saveResult();
-  }, [questions]);
-
+  // ================= LOADING =================
   if (loading) {
     return (
-      <ScrollView style={resultStyles.container}>
+      <View
+        style={[
+          resultStyles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
         <ActivityIndicator size="large" />
-      </ScrollView>
+        <Text>Memuat hasil...</Text>
+      </View>
     );
   }
 
+  // ================= UI =================
   return (
     <ScrollView style={resultStyles.container}>
-      <Text style={resultStyles.header}>Hasil Ujian</Text>
+      <Text style={resultStyles.header}>
+        {source === "soal" ? "Hasil Try Out" : "Hasil Quiz"}
+      </Text>
 
       <ResultTabs activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === "Statistik" && (
-        <StatistikSection score={score} isPassed={isPassed} stats={stats} />
+        <StatistikSection
+          score={finalScore}
+          isPassed={isPassed}
+          stats={stats}
+        />
       )}
 
       {activeTab === "Pembahasan" && (
-        <PembahasanSection questions={questions} userAnswers={userAnswers} />
+        <PembahasanSection questions={questions} userAnswers={finalAnswers} />
       )}
 
-      {activeTab === "Peringkat" && <PeringkatSection />}
+      {activeTab === "Peringkat" && (
+        <PeringkatSection
+          quizId={source === "quiz" ? quizId : undefined}
+          setId={source === "soal" ? soalSetId : undefined}
+          currentUser={user?.name}
+        />
+      )}
     </ScrollView>
   );
 }
