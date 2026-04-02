@@ -20,11 +20,10 @@ const AnnouncementCard: React.FC<Props> = ({
 }) => {
   return (
     <View style={styles.card}>
+      {/* HEADER */}
       <View style={styles.header}>
-        <View style={styles.iconOuter}>
-          <View style={styles.iconInner}>
-            <Ionicons name="megaphone" size={20} color="#FFFFFF" />
-          </View>
+        <View style={styles.iconWrapper}>
+          <Ionicons name="megaphone" size={18} color="#2563EB" />
         </View>
 
         <View style={styles.headerText}>
@@ -44,9 +43,10 @@ const AnnouncementCard: React.FC<Props> = ({
         </View>
       </View>
 
-      <View style={styles.divider} />
-
-      <Text style={styles.description}>{description}</Text>
+      {/* DESCRIPTION */}
+      <Text numberOfLines={3} style={styles.description}>
+        {description}
+      </Text>
     </View>
   );
 };

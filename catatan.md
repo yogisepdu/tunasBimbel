@@ -12,6 +12,9 @@ RootStack
               ├── Profile
               └── EditProfile
 
+## NEW Feature Soon
+* Register Website
+* Update View APP Mobile (Home, Ebook) 
 
 ## API Data Wilayah Indonesia
 

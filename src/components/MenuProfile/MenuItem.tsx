@@ -13,6 +13,8 @@ interface MenuItemProps {
   title: string;
   onPress?: (event: GestureResponderEvent) => void;
   isLast?: boolean;
+  iconColor?: string; // 🔥 tambahan
+  disabled?: boolean; // 🔥 tambahan
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({
@@ -20,18 +22,26 @@ const MenuItem: React.FC<MenuItemProps> = ({
   title,
   onPress,
   isLast = false,
+  iconColor = "#1F2A44",
+  disabled = false,
 }) => {
   return (
     <TouchableOpacity
-      style={[styles.menuItem, isLast && styles.lastMenuItem]}
+      style={[
+        styles.menuItem,
+        isLast && styles.lastMenuItem,
+        disabled && { opacity: 0.5 },
+      ]}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.6}
+      disabled={disabled}
     >
       <View style={styles.menuLeft}>
-        <Ionicons name={icon} size={22} color="#1F2A44" />
+        <Ionicons name={icon} size={22} color={iconColor} />
         <Text style={styles.menuText}>{title}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#ccc" />
+
+      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
     </TouchableOpacity>
   );
 };

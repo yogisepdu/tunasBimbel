@@ -3,7 +3,6 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import React, { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
 import {
   View,
@@ -11,24 +10,33 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  Linking,
 } from "react-native";
-import Input from "../components/HomeMenu/Input";
+import { Ionicons } from "@expo/vector-icons";
 import Colors from "../theme/colors";
-import { apiFetch } from "../services/api";
+import { apiFetch, API_URL } from "../services/api";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
 const LoginScreen = ({ navigation }: Props) => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
 
+  // 🔥 URL REGISTER (PASTIKAN SESUAI DENGAN BACKEND)
+  const registerUrl = `${API_URL}/linked`;
+
+  // 🔥 LOGIN FUNCTION (INI YANG HILANG TADI)
   const handleLogin = async () => {
     if (!email || !password) {
       Toast.show({
         type: "error",
-        text1: "Error",
+        text1: "Oops!",
         text2: "Email dan password wajib diisi",
       });
       return;
@@ -62,149 +70,268 @@ const LoginScreen = ({ navigation }: Props) => {
     }
   };
 
+  // 🔥 OPEN REGISTER
+  const handleOpenRegister = async () => {
+    try {
+      await Linking.openURL(registerUrl);
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Gagal membuka halaman",
+        text2: "Silakan coba lagi",
+      });
+    }
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Logo */}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <SafeAreaView style={styles.container}>
+      {/* HEADER */}
+      <View style={styles.header}>
         <Image source={require("../assets/logo.png")} style={styles.logo} />
-
-        {/* Header */}
-        <Text style={styles.title}>Selamat Datang Kembali! 👋</Text>
+        <Text style={styles.title}>Selamat Datang!</Text>
         <Text style={styles.subtitle}>
-          Masuk dan lanjutkan perjalanan belajarmu
+          Masuk untuk melanjutkan petualangan belajarmu hari ini.
         </Text>
+      </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Text style={styles.formTitle}>Masuk ke akun Anda</Text>
+      {/* CARD */}
+      <View style={styles.card}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>Portal Siswa</Text>
+        </View>
 
-          <Input
-            placeholder="Masukkan email anda..."
+        {/* EMAIL */}
+        <Text style={styles.label}>Email atau Username</Text>
+        <View style={styles.input}>
+          <Ionicons name="mail-outline" size={18} color="#9CA3AF" />
+          <TextInput
+            placeholder="nama@email.com"
             value={email}
             onChangeText={setEmail}
-            keyboardType="email-address"
+            style={styles.inputText}
             autoCapitalize="none"
           />
+        </View>
 
-          <Input
-            placeholder="Masukkan password anda..."
+        {/* PASSWORD */}
+        <Text style={styles.label}>Kata Sandi</Text>
+        <View style={styles.input}>
+          <Ionicons name="lock-closed-outline" size={18} color="#9CA3AF" />
+          <TextInput
+            placeholder="Masukkan sandi anda"
+            secureTextEntry={!showPassword}
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            style={styles.inputText}
           />
-
-          <TouchableOpacity style={styles.forgot}>
-            <Text style={styles.forgotText}>Lupa kata sandi ?</Text>
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={18}
+              color="#9CA3AF"
+            />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Masuk</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.registerText}>
-            Belum punya akun? <Text style={styles.registerLink}>Daftar</Text>
-          </Text>
         </View>
 
-        {/* Info */}
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>
-            Persiapkan Masa Depanmu dengan Belajar yang Berkualitas! 🎓
-          </Text>
-          <Text style={styles.infoText}>
-            Bersama Kami, Raih Prestasi Terbaikmu! ⭐
-          </Text>
+        {/* REMEMBER */}
+        <View style={styles.rowBetween}>
+          <TouchableOpacity
+            style={styles.rememberWrap}
+            onPress={() => setRemember(!remember)}
+          >
+            <Ionicons
+              name={remember ? "checkbox" : "square-outline"}
+              size={18}
+              color={Colors.primary}
+            />
+            <Text style={styles.remember}>Ingat saya</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.forgot}>Lupa Sandi?</Text>
         </View>
 
-        {/* Footer */}
-        <Text style={styles.footer}>
-          © 2026 Tunas Bimbel. All rights reserved.
+        {/* BUTTON */}
+        <TouchableOpacity
+          style={[styles.button, loading && { opacity: 0.7 }]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Masuk Sekarang →</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* REGISTER */}
+      <Text style={styles.register}>
+        Belum punya akun?{" "}
+        <Text style={styles.registerLink} onPress={handleOpenRegister}>
+          Daftar Gratis
         </Text>
-      </ScrollView>
+      </Text>
     </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 
+export default LoginScreen;
+
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
+    backgroundColor: "#F3F4F6",
     padding: 20,
-    backgroundColor: Colors.background,
+  },
+
+  /* HEADER */
+  header: {
+    backgroundColor: "#93c9ab",
+    borderRadius: 30,
+    padding: 25,
+    alignItems: "center",
+    marginBottom: -40,
   },
   logo: {
-    width: 80,
-    height: 80,
-    alignSelf: "center",
-    marginTop: 30,
+    width: 60,
+    height: 60,
     marginBottom: 10,
   },
   title: {
     fontSize: 22,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: Colors.textDark,
+    fontWeight: "700",
   },
   subtitle: {
     textAlign: "center",
-    color: Colors.textLight,
-    marginBottom: 30,
+    color: "#3f3f3f",
+    marginTop: 5,
   },
-  form: {
-    backgroundColor: "#FFFFFF",
+
+  /* CARD */
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 25,
     padding: 20,
-    borderRadius: 15,
-    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
   },
-  formTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+
+  badge: {
+    alignSelf: "center",
+    backgroundColor: "#E0F2FE",
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 20,
     marginBottom: 15,
-    color: Colors.textDark,
+  },
+  badgeText: {
+    color: "#04a80aff",
+    fontWeight: "600",
+  },
+
+  label: {
+    marginTop: 10,
+    marginBottom: 5,
+    color: "#374151",
+  },
+
+  input: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 15,
+    padding: 12,
+    marginBottom: 10,
+  },
+
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  remember: {
+    color: "#6B7280",
   },
   forgot: {
-    alignItems: "flex-end",
-    marginBottom: 20,
+    color: "#F97316",
+    fontWeight: "500",
   },
-  forgotText: {
-    color: Colors.secondary,
-  },
+
   button: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 15,
-    borderRadius: 10,
+    backgroundColor: "#04a80aff",
+    padding: 15,
+    borderRadius: 20,
     alignItems: "center",
   },
   buttonText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 16,
+    color: "#fff",
+    fontWeight: "700",
   },
-  registerText: {
+
+  /* DIVIDER */
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 15,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E5E7EB",
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: "#6B7280",
+  },
+
+  /* SOCIAL */
+  socialRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  socialBtn: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+
+  /* REGISTER */
+  register: {
     textAlign: "center",
-    marginTop: 15,
-    color: Colors.textLight,
+    marginTop: 20,
+    color: "#6B7280",
   },
   registerLink: {
-    color: Colors.secondary,
-    fontWeight: "bold",
+    color: "rgb(38, 192, 43)",
+    fontWeight: "700",
   },
-  infoBox: {
-    backgroundColor: "#E9FFD6",
-    padding: 15,
+  input: {
+    backgroundColor: "#F9FAFB",
     borderRadius: 15,
-    marginTop: 30,
+    padding: 12,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  infoText: {
-    textAlign: "center",
-    color: Colors.textDark,
-    marginBottom: 5,
+
+  inputText: {
+    flex: 1,
   },
-  footer: {
-    textAlign: "center",
-    fontSize: 12,
-    color: Colors.textLight,
-    marginTop: 30,
+
+  rememberWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  socialText: {
+    marginLeft: 5,
   },
 });
-
-export default LoginScreen;

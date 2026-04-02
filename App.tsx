@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useFonts } from "expo-font";
@@ -22,6 +22,12 @@ import ResultScreen from "./src/screens/Quiz/ResultScreen";
 import SoalWarningScreen from "./src/screens/Soal/SoalWarningScreen";
 
 import Toast from "react-native-toast-message";
+import CustomToast from "./src/components/CustomToast";
+
+// 🔥 CUSTOM TOAST CONFIG
+const toastConfig = {
+  error: (props: any) => <CustomToast {...props} />,
+};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -31,12 +37,12 @@ export default function App() {
   );
   const [loading, setLoading] = useState(true);
 
-  // 🔑 PRELOAD FONT IONICONS
+  // 🔑 LOAD FONT
   const [fontsLoaded] = useFonts({
     ...Ionicons.font,
   });
 
-  // 🔥 CHECK TOKEN UNTUK AUTO LOGIN
+  // 🔥 AUTO LOGIN CHECK
   useEffect(() => {
     const checkLogin = async () => {
       try {
@@ -55,18 +61,14 @@ export default function App() {
     checkLogin();
   }, []);
 
-  // ⏳ TAHAN RENDER SEBELUM FONT DAN TOKEN CHECK SELESAI
+  // ⏳ LOADING SCREEN
   if (!fontsLoaded || loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator size="large" />
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#22C1DC" />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
@@ -83,23 +85,35 @@ export default function App() {
           {/* REDIRECT */}
           <Stack.Screen name="Redirect" component={RedirectScreen} />
 
-          {/* MAIN APP */}
+          {/* MAIN */}
           <Stack.Screen name="MainTabs" component={HomeScreen} />
 
-          {/* NON TAB SCREENS */}
+          {/* OTHERS */}
           <Stack.Screen name="Kalender" component={KalenderScreen} />
 
           {/* EBOOK */}
           <Stack.Screen name="EbookDetail" component={EbookDetailScreen} />
           <Stack.Screen name="MateriDetail" component={MateriDetailScreen} />
+
+          {/* QUIZ */}
           <Stack.Screen name="Quiz" component={QuizScreen} />
           <Stack.Screen name="SoalWarning" component={SoalWarningScreen} />
           <Stack.Screen name="Result" component={ResultScreen} />
         </Stack.Navigator>
       </NavigationContainer>
 
-      {/* GLOBAL TOAST */}
-      <Toast />
+      {/* 🔥 GLOBAL TOAST (WAJIB PAKAI CONFIG) */}
+      <Toast config={toastConfig} />
     </SafeAreaProvider>
   );
 }
+
+// 🎨 STYLE
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

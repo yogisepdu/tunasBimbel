@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,14 +13,22 @@ import { styles } from "../../assets/styles/EditProfileStyles";
 import { Dropdown } from "react-native-element-dropdown";
 import { useWilayah } from "../../hooks/useWilayah";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
+import { apiFetch } from "../../services/api";
+
 const EditProfileScreen: React.FC = () => {
   // ========================
-  // PROFILE STATE
+  // STATE
   // ========================
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [gender, setGender] = useState<"pria" | "wanita">("pria");
+  const [saving, setSaving] = useState(false);
 
   // ========================
-  // WILAYAH (DARI HOOK)
+  // WILAYAH
   // ========================
   const {
     provinces,
@@ -35,9 +43,95 @@ const EditProfileScreen: React.FC = () => {
     setSelectedDistrict,
     selectedVillage,
     setSelectedVillage,
-    postalCode,
     loading,
   } = useWilayah();
+
+  // ========================
+  // LOAD PROFILE
+  // ========================
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await apiFetch("/profile");
+
+        const user = res.user;
+        const profile = res.profile;
+
+        setEmail(user?.email || "");
+        setName(profile?.name || "");
+        setPhone(profile?.phone || "");
+        setGender(profile?.gender || "pria");
+
+        setSelectedProvince(profile?.province_id || null);
+        setSelectedRegency(profile?.regency_id || null);
+        setSelectedDistrict(profile?.district_id || null);
+        setSelectedVillage(profile?.village_id || null);
+      } catch (error: any) {
+        Toast.show({
+          type: "error",
+          text1: "Gagal load profil",
+          text2: error.message,
+        });
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  // ========================
+  // SAVE PROFILE
+  // ========================
+  const handleSave = async () => {
+    if (!name || !phone) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Nama dan nomor WA wajib diisi",
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const res = await apiFetch("/profile", {
+        method: "POST",
+        body: {
+          name,
+          phone,
+          gender,
+          province_id: selectedProvince,
+          regency_id: selectedRegency,
+          district_id: selectedDistrict,
+          village_id: selectedVillage,
+        },
+      });
+
+      // 🔥 update local storage
+      const stored = await AsyncStorage.getItem("user");
+      if (stored) {
+        const user = JSON.parse(stored);
+        await AsyncStorage.setItem(
+          "user",
+          JSON.stringify({ ...user, profile: res.profile }),
+        );
+      }
+
+      Toast.show({
+        type: "success",
+        text1: "Berhasil",
+        text2: "Profil berhasil diperbarui",
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "Gagal",
+        text2: error.message,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -47,7 +141,7 @@ const EditProfileScreen: React.FC = () => {
           <Text style={styles.headerTitle}>Edit Profil</Text>
         </View>
 
-        {/* FOTO PROFIL */}
+        {/* AVATAR */}
         <View style={styles.avatarContainer}>
           <Image
             source={{ uri: "https://i.pravatar.cc/300" }}
@@ -60,183 +154,127 @@ const EditProfileScreen: React.FC = () => {
 
         {/* EMAIL */}
         <Text style={styles.label}>Email*</Text>
-        <TextInput
-          style={styles.input}
-          value="yogisepdudehiya@gmail.com"
-          editable={false}
-        />
+        <TextInput style={styles.input} value={email} editable={false} />
 
         {/* NAMA */}
         <Text style={styles.label}>Nama*</Text>
-        <TextInput style={styles.input} placeholder="Masukkan nama" />
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="Masukkan nama"
+        />
 
-        {/* NO WA */}
+        {/* WA */}
         <Text style={styles.label}>No. Whatsapp*</Text>
-        <TextInput style={styles.input} placeholder="Masukkan nomor WA" />
+        <TextInput
+          style={styles.input}
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="Masukkan nomor WA"
+          keyboardType="phone-pad"
+        />
 
         {/* GENDER */}
         <Text style={styles.label}>Jenis Kelamin*</Text>
         <View style={styles.genderContainer}>
-          <TouchableOpacity
-            style={[
-              styles.genderCard,
-              gender === "pria" && styles.genderActive,
-            ]}
-            onPress={() => setGender("pria")}
-          >
-            <Ionicons
-              name="male"
-              size={40}
-              color={gender === "pria" ? "#fff" : "#1F2A44"}
-            />
-            <Text
-              style={[
-                styles.genderText,
-                gender === "pria" && styles.genderTextActive,
-              ]}
+          {["pria", "wanita"].map((g) => (
+            <TouchableOpacity
+              key={g}
+              style={[styles.genderCard, gender === g && styles.genderActive]}
+              onPress={() => setGender(g as any)}
             >
-              Pria
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.genderCard,
-              gender === "wanita" && styles.genderActive,
-            ]}
-            onPress={() => setGender("wanita")}
-          >
-            <Ionicons
-              name="female"
-              size={40}
-              color={gender === "wanita" ? "#fff" : "#1F2A44"}
-            />
-            <Text
-              style={[
-                styles.genderText,
-                gender === "wanita" && styles.genderTextActive,
-              ]}
-            >
-              Wanita
-            </Text>
-          </TouchableOpacity>
+              <Ionicons
+                name={g === "pria" ? "male" : "female"}
+                size={40}
+                color={gender === g ? "#fff" : "#1F2A44"}
+              />
+              <Text
+                style={[
+                  styles.genderText,
+                  gender === g && styles.genderTextActive,
+                ]}
+              >
+                {g === "pria" ? "Pria" : "Wanita"}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* PROVINSI */}
         <Text style={styles.label}>Provinsi*</Text>
-
         <Dropdown
           style={styles.dropdown}
-          containerStyle={styles.containerStyle}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
-          inputSearchStyle={styles.inputSearchStyle}
-          itemTextStyle={styles.itemTextStyle}
           data={provinces}
-          search
-          maxHeight={300}
-          activeColor="#F2F4F7"
           labelField="name"
           valueField="id"
-          placeholder="Pilih Provinsi"
-          searchPlaceholder="Cari provinsi..."
           value={selectedProvince}
           onChange={(item) => setSelectedProvince(item.id)}
+          placeholder="Pilih Provinsi"
         />
 
         {/* KABUPATEN */}
-        <Text style={styles.label}>Kota/Kabupaten*</Text>
-
+        <Text style={styles.label}>Kabupaten*</Text>
         <Dropdown
           style={[
             styles.dropdown,
             !selectedProvince && styles.dropdownDisabled,
           ]}
-          containerStyle={styles.containerStyle}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
-          inputSearchStyle={styles.inputSearchStyle}
-          itemTextStyle={styles.itemTextStyle}
           data={regencies}
-          search
-          maxHeight={300}
-          activeColor="#F2F4F7"
           labelField="name"
           valueField="id"
-          placeholder="Pilih Kabupaten"
-          searchPlaceholder="Cari kabupaten..."
           value={selectedRegency}
           onChange={(item) => setSelectedRegency(item.id)}
           disable={!selectedProvince}
+          placeholder="Pilih Kabupaten"
         />
 
         {/* KECAMATAN */}
         <Text style={styles.label}>Kecamatan*</Text>
-
         <Dropdown
-          style={[
-            styles.dropdown,
-            !selectedRegency && styles.dropdownDisabled,
-          ]}
-          containerStyle={styles.containerStyle}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
-          inputSearchStyle={styles.inputSearchStyle}
-          itemTextStyle={styles.itemTextStyle}
+          style={[styles.dropdown, !selectedRegency && styles.dropdownDisabled]}
           data={districts}
-          search
-          maxHeight={300}
-          activeColor="#F2F4F7"
           labelField="name"
           valueField="id"
-          placeholder="Pilih Kecamatan"
-          searchPlaceholder="Cari kecamatan..."
           value={selectedDistrict}
           onChange={(item) => setSelectedDistrict(item.id)}
           disable={!selectedRegency}
+          placeholder="Pilih Kecamatan"
         />
 
         {/* KELURAHAN */}
         <Text style={styles.label}>Kelurahan*</Text>
-
         <Dropdown
           style={[
             styles.dropdown,
             !selectedDistrict && styles.dropdownDisabled,
           ]}
-          containerStyle={styles.containerStyle}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
-          inputSearchStyle={styles.inputSearchStyle}
-          itemTextStyle={styles.itemTextStyle}
           data={villages}
-          search
-          maxHeight={300}
-          activeColor="#F2F4F7"
           labelField="name"
           valueField="id"
-          placeholder="Pilih Kelurahan"
-          searchPlaceholder="Cari kelurahan..."
           value={selectedVillage}
           onChange={(item) => setSelectedVillage(item.id)}
           disable={!selectedDistrict}
+          placeholder="Pilih Kelurahan"
         />
 
-        {loading && (
-          <ActivityIndicator
-            size="small"
-            color="#1F2A44"
-            style={{ marginTop: 10 }}
-          />
-        )}
+        {loading && <ActivityIndicator style={{ marginTop: 10 }} />}
 
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* BUTTON SIMPAN */}
+      {/* BUTTON */}
       <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity style={styles.saveButton}>
-          <Text style={styles.saveButtonText}>Simpan</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, saving && { opacity: 0.7 }]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Simpan</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>

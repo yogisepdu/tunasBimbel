@@ -1,52 +1,51 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
+  /* ================= ROOT ================= */
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
-    paddingHorizontal: 20,
+    backgroundColor: "#F9FAFB",
   },
 
-  /* ===== Segmented Header ===== */
-
+  /* ================= HEADER ================= */
   segmentWrapper: {
-    flexDirection: "row",
-    backgroundColor: "#E5E7EB",
-    borderRadius: 18,
-    padding: 6,
-    marginTop: 40,
-    marginBottom: 28,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 10,
   },
 
   segmentActive: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 10,
-    borderRadius: 14,
-    elevation: 2,
+    backgroundColor: "#EFF6FF",
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
   },
 
   segmentTextActive: {
     marginLeft: 6,
-    fontWeight: "600",
     fontSize: 13,
     color: "#1E3A8A",
+    fontWeight: "600",
   },
 
-  /* ===== Card ===== */
-
+  /* ================= CARD ================= */
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 14,
+
+    // iOS shadow
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+
+    // Android shadow
+    elevation: 3,
   },
 
   header: {
@@ -54,70 +53,58 @@ export const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
 
-  iconOuter: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(16,185,129,0.12)",
+  /* 🔥 ICON MODERN */
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#DBEAFE",
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  iconInner: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#10B981",
-    justifyContent: "center",
-    alignItems: "center",
+    marginRight: 12,
   },
 
   headerText: {
     flex: 1,
-    marginLeft: 14,
   },
 
   metaRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
   },
 
   meta: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: "#6B7280",
     fontWeight: "500",
   },
 
-  badge: {
-    backgroundColor: "#EEF2FF",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-
-  badgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#4338CA",
-  },
-
   title: {
-    fontSize: 17,
+    marginTop: 4,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
-    marginTop: 6,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: "#F1F5F9",
-    marginVertical: 18,
+    color: "#111827",
   },
 
   description: {
-    fontSize: 14,
-    color: "#475569",
-    lineHeight: 22,
+    marginTop: 10,
+    fontSize: 13,
+    color: "#374151",
+    lineHeight: 19,
+  },
+
+  /* ================= BADGE ================= */
+  badge: {
+    backgroundColor: "#22C55E",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
   },
 });
