@@ -13,8 +13,11 @@ RootStack
               └── EditProfile
 
 ## NEW Feature Soon
-* Register Website
-* Update View APP Mobile (Home, Ebook) 
+* Add Feature Login with Account Gmail.
+* Add Feature Aktivitas Terkini di HomeScreen.
+
+## NOTE*
+untuk bagian kata syarat & ketentuan, di arahkan ke link (auth/checkbox.tsx)
 
 ## API Data Wilayah Indonesia
 

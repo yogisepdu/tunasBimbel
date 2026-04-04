@@ -12,12 +12,12 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Linking,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "../theme/colors";
-import { apiFetch, API_URL } from "../services/api";
-import { Keyboard, TouchableWithoutFeedback } from "react-native";
+import { apiFetch } from "../services/api";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
@@ -28,10 +28,7 @@ const LoginScreen = ({ navigation }: Props) => {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
 
-  // 🔥 URL REGISTER (PASTIKAN SESUAI DENGAN BACKEND)
-  const registerUrl = `${API_URL}/linked`;
-
-  // 🔥 LOGIN FUNCTION (INI YANG HILANG TADI)
+  // 🔥 LOGIN FUNCTION
   const handleLogin = async () => {
     if (!email || !password) {
       Toast.show({
@@ -70,109 +67,101 @@ const LoginScreen = ({ navigation }: Props) => {
     }
   };
 
-  // 🔥 OPEN REGISTER
-  const handleOpenRegister = async () => {
-    try {
-      await Linking.openURL(registerUrl);
-    } catch {
-      Toast.show({
-        type: "error",
-        text1: "Gagal membuka halaman",
-        text2: "Silakan coba lagi",
-      });
-    }
+  // 🔥 NAVIGATE TO REGISTER
+  const handleOpenRegister = () => {
+    navigation.navigate("Register");
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-    <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Image source={require("../assets/logo.png")} style={styles.logo} />
-        <Text style={styles.title}>Selamat Datang!</Text>
-        <Text style={styles.subtitle}>
-          Masuk untuk melanjutkan petualangan belajarmu hari ini.
-        </Text>
-      </View>
-
-      {/* CARD */}
-      <View style={styles.card}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>Portal Siswa</Text>
+      <SafeAreaView style={styles.container}>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Image source={require("../assets/logo.png")} style={styles.logo} />
+          <Text style={styles.title}>Selamat Datang!</Text>
+          <Text style={styles.subtitle}>
+            Masuk untuk melanjutkan petualangan belajarmu hari ini.
+          </Text>
         </View>
 
-        {/* EMAIL */}
-        <Text style={styles.label}>Email atau Username</Text>
-        <View style={styles.input}>
-          <Ionicons name="mail-outline" size={18} color="#9CA3AF" />
-          <TextInput
-            placeholder="nama@email.com"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.inputText}
-            autoCapitalize="none"
-          />
-        </View>
+        {/* CARD */}
+        <View style={styles.card}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>Portal Siswa</Text>
+          </View>
 
-        {/* PASSWORD */}
-        <Text style={styles.label}>Kata Sandi</Text>
-        <View style={styles.input}>
-          <Ionicons name="lock-closed-outline" size={18} color="#9CA3AF" />
-          <TextInput
-            placeholder="Masukkan sandi anda"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            style={styles.inputText}
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons
-              name={showPassword ? "eye-off-outline" : "eye-outline"}
-              size={18}
-              color="#9CA3AF"
+          {/* EMAIL */}
+          <Text style={styles.label}>Email atau Username</Text>
+          <View style={styles.input}>
+            <Ionicons name="mail-outline" size={18} color="#9CA3AF" />
+            <TextInput
+              placeholder="nama@email.com"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.inputText}
+              autoCapitalize="none"
             />
-          </TouchableOpacity>
-        </View>
+          </View>
 
-        {/* REMEMBER */}
-        <View style={styles.rowBetween}>
+          {/* PASSWORD */}
+          <Text style={styles.label}>Kata Sandi</Text>
+          <View style={styles.input}>
+            <Ionicons name="lock-closed-outline" size={18} color="#9CA3AF" />
+            <TextInput
+              placeholder="Masukkan sandi anda"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              style={styles.inputText}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={18}
+                color="#9CA3AF"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* REMEMBER */}
+          <View style={styles.rowBetween}>
+            <TouchableOpacity
+              style={styles.rememberWrap}
+              onPress={() => setRemember(!remember)}
+            >
+              <Ionicons
+                name={remember ? "checkbox" : "square-outline"}
+                size={18}
+                color={Colors.primary}
+              />
+              <Text style={styles.remember}>Ingat saya</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.forgot}>Lupa Sandi?</Text>
+          </View>
+
+          {/* BUTTON */}
           <TouchableOpacity
-            style={styles.rememberWrap}
-            onPress={() => setRemember(!remember)}
+            style={[styles.button, loading && { opacity: 0.7 }]}
+            onPress={handleLogin}
+            disabled={loading}
           >
-            <Ionicons
-              name={remember ? "checkbox" : "square-outline"}
-              size={18}
-              color={Colors.primary}
-            />
-            <Text style={styles.remember}>Ingat saya</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Masuk Sekarang →</Text>
+            )}
           </TouchableOpacity>
-
-          <Text style={styles.forgot}>Lupa Sandi?</Text>
         </View>
 
-        {/* BUTTON */}
-        <TouchableOpacity
-          style={[styles.button, loading && { opacity: 0.7 }]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Masuk Sekarang →</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* REGISTER */}
-      <Text style={styles.register}>
-        Belum punya akun?{" "}
-        <Text style={styles.registerLink} onPress={handleOpenRegister}>
-          Daftar Gratis
+        {/* REGISTER */}
+        <Text style={styles.register}>
+          Belum punya akun?{" "}
+          <Text style={styles.registerLink} onPress={handleOpenRegister}>
+            Daftar
+          </Text>
         </Text>
-      </Text>
-    </SafeAreaView>
+      </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 };
@@ -186,7 +175,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 
-  /* HEADER */
   header: {
     backgroundColor: "#93c9ab",
     borderRadius: 30,
@@ -209,7 +197,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
-  /* CARD */
   card: {
     backgroundColor: "#fff",
     borderRadius: 25,
@@ -244,6 +231,13 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 12,
     marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  inputText: {
+    flex: 1,
   },
 
   rowBetween: {
@@ -251,9 +245,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 15,
   },
+
+  rememberWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
   remember: {
     color: "#6B7280",
   },
+
   forgot: {
     color: "#F97316",
     fontWeight: "500",
@@ -265,73 +267,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
   },
+
   buttonText: {
     color: "#fff",
     fontWeight: "700",
   },
 
-  /* DIVIDER */
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 15,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E5E7EB",
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: "#6B7280",
-  },
-
-  /* SOCIAL */
-  socialRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  socialBtn: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
-    marginHorizontal: 5,
-  },
-
-  /* REGISTER */
   register: {
     textAlign: "center",
     marginTop: 20,
     color: "#6B7280",
   },
+
   registerLink: {
     color: "rgb(38, 192, 43)",
     fontWeight: "700",
-  },
-  input: {
-    backgroundColor: "#F9FAFB",
-    borderRadius: 15,
-    padding: 12,
-    marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  inputText: {
-    flex: 1,
-  },
-
-  rememberWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  socialText: {
-    marginLeft: 5,
   },
 });

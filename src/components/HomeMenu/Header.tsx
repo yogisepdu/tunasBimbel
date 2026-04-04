@@ -1,18 +1,23 @@
 import { View, Text, Image, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Header() {
   return (
     <View style={styles.container}>
-      <View style={styles.left}>
-        <Image source={require("../../assets/logo.png")} style={styles.avatar} />
-        <View>
-          <Text style={styles.name}>Yogi Sepdu Dehiya</Text>
-          <Text style={styles.email}>yogisepdudehiya@gmail.com</Text>
+      <View style={styles.row}>
+        <Image
+          source={require("../../assets/logo.png")}
+          style={styles.avatar}
+        />
+
+        <View style={{ marginLeft: 10 }}>
+          <Text style={styles.small}>SELAMAT DATANG</Text>
+          <Text style={styles.name}>Halo, Yogi 👋</Text>
         </View>
       </View>
 
-      <View style={styles.premium}>
-        <Text style={{ color: "#F5A623", fontWeight: "bold" }}>👑 Premium</Text>
+      <View style={styles.notif}>
+        <Ionicons name="notifications-outline" size={20} />
       </View>
     </View>
   );
@@ -20,35 +25,39 @@ export default function Header() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    height: 120,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 10,
+    backgroundColor: "#F8FAFC",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
-  left: {
+
+  row: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    marginRight: 10,
+    width: 45,
+    height: 45,
+    borderRadius: 22,
   },
+
+  small: {
+    fontSize: 11,
+    color: "#94A3B8",
+  },
+
   name: {
-    fontWeight: "bold",
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "700",
   },
-  email: {
-    fontSize: 12,
-    color: "#777",
-  },
-  premium: {
-    backgroundColor: "#FFF5E5",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+
+  notif: {
+    backgroundColor: "#fff",
+    padding: 10,
     borderRadius: 12,
   },
 });

@@ -1,13 +1,12 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import { View, Text, StyleSheet } from "react-native";
 
 import HomeTab from "./HomeTab";
 import EbookTab from "./EbookTab";
 import AktivitasTab from "./AktivitasTab";
-import ProfileTab from "./ProfileTab";
-import Colors from "../theme/colors";
-
 import ProfileStack from "../navigation/ProfileStack";
+import Colors from "../theme/colors";
 
 const Tab = createBottomTabNavigator();
 
@@ -16,12 +15,8 @@ export default function HomeScreen() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: "#999",
-        tabBarStyle: {
-          height: 80,
-          paddingBottom: 6,
-        },
+        tabBarStyle: styles.tabBar,
+
         tabBarIcon: ({ focused, color }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
 
@@ -33,7 +28,7 @@ export default function HomeScreen() {
               iconName = focused ? "book" : "book-outline";
               break;
             case "AktivitasTab":
-              iconName = focused ? "list" : "list-outline";
+              iconName = focused ? "pulse" : "pulse-outline";
               break;
             case "ProfileTab":
               iconName = focused ? "person" : "person-outline";
@@ -42,30 +37,59 @@ export default function HomeScreen() {
               iconName = "ellipse";
           }
 
-          return <Ionicons name={iconName} size={28} color={color} />;
+          return <Ionicons name={iconName} size={22} color={color} />;
         },
+
+        tabBarLabel: ({ focused, color }) => {
+          let label = "";
+
+          switch (route.name) {
+            case "HomeTab":
+              label = "Home";
+              break;
+            case "EbookTab":
+              label = "Ebook";
+              break;
+            case "AktivitasTab":
+              label = "Aktivitas";
+              break;
+            case "ProfileTab":
+              label = "Profil";
+              break;
+          }
+
+          return (
+            <Text
+              style={{
+                fontSize: 11,
+                color,
+                marginBottom: 4,
+                fontWeight: focused ? "600" : "400",
+              }}
+            >
+              {label}
+            </Text>
+          );
+        },
+
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: "#9CA3AF",
       })}
     >
-      <Tab.Screen
-        name="HomeTab"
-        component={HomeTab}
-        options={{ title: "Home" }}
-      />
-      <Tab.Screen
-        name="EbookTab"
-        component={EbookTab}
-        options={{ title: "E-Book" }}
-      />
-      <Tab.Screen
-        name="AktivitasTab"
-        component={AktivitasTab}
-        options={{ title: "Aktivitas" }}
-      />
-      <Tab.Screen
-        name="ProfileTab"
-        component={ProfileStack}
-        options={{ title: "Profil" }}
-      />
+      <Tab.Screen name="HomeTab" component={HomeTab} />
+      <Tab.Screen name="EbookTab" component={EbookTab} />
+      <Tab.Screen name="AktivitasTab" component={AktivitasTab} />
+      <Tab.Screen name="ProfileTab" component={ProfileStack} />
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    height: 70,
+    paddingTop: 6,
+    borderTopWidth: 0.5,
+    borderTopColor: "#E5E7EB",
+    backgroundColor: "#fff",
+  },
+});

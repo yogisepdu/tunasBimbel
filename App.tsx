@@ -20,6 +20,7 @@ import MateriDetailScreen from "./src/screens/Ebook/MateriDetailScreen";
 import QuizScreen from "./src/screens/Quiz/QuizScreen";
 import ResultScreen from "./src/screens/Quiz/ResultScreen";
 import SoalWarningScreen from "./src/screens/Soal/SoalWarningScreen";
+import RegisterScreen from "./src/screens/RegisterScreen";
 
 import Toast from "react-native-toast-message";
 import CustomToast from "./src/components/CustomToast";
@@ -81,6 +82,8 @@ export default function App() {
         >
           {/* AUTH */}
           <Stack.Screen name="Login" component={LoginScreen} />
+
+          <Stack.Screen name="Register" component={RegisterScreen} />
 
           {/* REDIRECT */}
           <Stack.Screen name="Redirect" component={RedirectScreen} />
