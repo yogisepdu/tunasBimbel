@@ -1,6 +1,11 @@
 export type RootStackParamList = {
-  Login: undefined;
-  
+  Login:
+    | {
+        registered?: boolean;
+        email?: string;
+      }
+    | undefined;
+
   Register: undefined;
 
   MainTabs:
@@ -8,6 +13,8 @@ export type RootStackParamList = {
         screen?: string;
       }
     | undefined;
+
+  ForgotPassword: undefined;
 
   Redirect: {
     targetTab: string;

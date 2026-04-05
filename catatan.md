@@ -16,6 +16,7 @@ RootStack
 * Add Feature Login with Account Gmail.
 * Add Feature Aktivitas Terkini di HomeScreen.
 
+
 ## NOTE*
 untuk bagian kata syarat & ketentuan, di arahkan ke link (auth/checkbox.tsx)
 

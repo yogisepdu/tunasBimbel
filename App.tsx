@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { RootStackParamList } from "./src/navigation/types";
 import { navigationRef } from "./src/navigation/navigationRef";
 
-import LoginScreen from "./src/screens/LoginScreen";
+import LoginScreen from "./src/screens/Auth/LoginScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import KalenderScreen from "./src/screens/KalenderScreen";
 import RedirectScreen from "./src/screens/redirect/redirectScreen";
@@ -20,7 +20,8 @@ import MateriDetailScreen from "./src/screens/Ebook/MateriDetailScreen";
 import QuizScreen from "./src/screens/Quiz/QuizScreen";
 import ResultScreen from "./src/screens/Quiz/ResultScreen";
 import SoalWarningScreen from "./src/screens/Soal/SoalWarningScreen";
-import RegisterScreen from "./src/screens/RegisterScreen";
+import RegisterScreen from "./src/screens/Auth/RegisterScreen";
+import ForgotPasswordScreen from "./src/screens/Auth/ForgotPasswordScreen";
 
 import Toast from "react-native-toast-message";
 import CustomToast from "./src/components/CustomToast";
@@ -84,6 +85,12 @@ export default function App() {
           <Stack.Screen name="Login" component={LoginScreen} />
 
           <Stack.Screen name="Register" component={RegisterScreen} />
+
+          {/* 🔥 TAMBAHAN WAJIB */}
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPasswordScreen}
+          />
 
           {/* REDIRECT */}
           <Stack.Screen name="Redirect" component={RedirectScreen} />

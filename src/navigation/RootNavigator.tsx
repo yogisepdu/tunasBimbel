@@ -4,7 +4,7 @@
   import { RootStackParamList } from "./types";
 
   // Screens
-  import LoginScreen from "../screens/LoginScreen";
+  import LoginScreen from "../screens/Auth/LoginScreen";
   import RedirectScreen from "../screens/redirect/redirectScreen";
 
   // Bottom Tabs
