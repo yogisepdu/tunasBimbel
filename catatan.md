@@ -13,8 +13,8 @@ RootStack
               └── EditProfile
 
 ## NEW Feature Soon
-* Add Feature Login with Account Gmail.
 * Add Feature Aktivitas Terkini di HomeScreen.
+* Add feature method kelas kemudian, untuk materi yang muncul berdasarkan kelas yang dibeli user
 
 
 ## NOTE*

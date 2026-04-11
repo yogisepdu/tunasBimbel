@@ -1,11 +1,73 @@
-import { ScrollView, View, Text } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ScrollView, View, Text, ActivityIndicator } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+
 import Header from "../components/HomeMenu/Header";
 import Banner from "../components/HomeMenu/Banner";
 import MenuGrid from "../components/MenuGrid";
 import TryoutCard from "../components/HomeMenu/TryoutCard";
 import ActivityCard from "../components/HomeMenu/ActivityCard";
 
+import { apiFetch } from "../services/api";
+
 export default function HomeTab() {
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
+  
+  const [packages, setPackages] = useState<any[]>([]);
+  const [loadingPackage, setLoadingPackage] = useState(true);
+
+  const navigation = useNavigation<any>();
+
+  const fetchActivities = async () => {
+    try {
+      setLoadingActivity(true);
+      const res = await apiFetch("/activities");
+
+      // console.log("🔥 ACTIVITIES:", res.data);
+
+      setActivities(res.data || []);
+    } catch (err) {
+      console.log("Activity error:", err);
+    } finally {
+      setLoadingActivity(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActivities();
+  }, []);
+
+  // 🔥 refresh setiap balik ke screen
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchActivities();
+    }, []),
+  );
+
+  const fetchPackages = async () => {
+    try {
+      const res = await apiFetch("/packages");
+      setPackages(res.data || []);
+    } catch (err) {
+      console.log("Package error:", err);
+    } finally {
+      setLoadingPackage(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActivities();
+    fetchPackages();
+  }, []);
+
+  const pendingCount = activities.filter((a: any) => a.progress < 100).length;
+
+  const getRandomRating = () => {
+    return (4.3 + Math.random() * 0.7).toFixed(1);
+  };
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: "#F8FAFC" }}
@@ -40,21 +102,34 @@ export default function HomeTab() {
           showsHorizontalScrollIndicator={false}
           style={{ marginTop: 15, paddingLeft: 16 }}
         >
-          <TryoutCard
-            title="Mastering UTBK: Strategi Menaklukkan TPS"
-            participants="1.2k"
-            rating={4.9}
-          />
-
-          <TryoutCard
-            title="Intensif Bahasa TOEFL/IELTS"
-            participants="850"
-            rating={4.8}
-          />
+          {loadingPackage ? (
+            <ActivityIndicator />
+          ) : (
+            packages.map((pkg) => (
+              <TryoutCard
+                key={pkg.id}
+                title={pkg.name}
+                participants={`${pkg.totalClass} Kelas`}
+                rating={Number(getRandomRating())}
+                locked={!pkg.is_owned}
+                image={pkg.image}
+                price={pkg.price}
+                onPress={() => {
+                  if (pkg.is_owned) {
+                    navigation.navigate("EbookTab");
+                  } else {
+                    navigation.navigate("PaymentScreen", {
+                      packageId: pkg.id,
+                    });
+                  }
+                }}
+              />
+            ))
+          )}
         </ScrollView>
-        {/* AKTIVITAS TERKINI */}
+
+        {/* 🔥 AKTIVITAS TERKINI */}
         <View style={{ marginTop: 30, paddingHorizontal: 16 }}>
-          {/* HEADER */}
           <View
             style={{
               flexDirection: "row",
@@ -76,34 +151,35 @@ export default function HomeTab() {
               }}
             >
               <Text
-                style={{ fontSize: 11, color: "#2563EB", fontWeight: "600" }}
+                style={{
+                  fontSize: 11,
+                  color: "#2563EB",
+                  fontWeight: "600",
+                }}
               >
-                3 TUGAS BARU
+                {pendingCount} BELUM SELESAI
               </Text>
             </View>
           </View>
 
           {/* LIST */}
-          <ActivityCard
-            type="quiz"
-            title="Kuis Matematika: Aljabar"
-            subtitle="Tenggat: Besok, 18:00 WIB"
-            status="BELUM"
-          />
-
-          <ActivityCard
-            type="materi"
-            title="Materi Biologi: Sel & Jaringan"
-            subtitle="Telah dipelajari 45%"
-            status="LANJUT"
-          />
-
-          <ActivityCard
-            type="event"
-            title="Webinar: Persiapan Mandiri UI"
-            subtitle="Hari ini pukul 19:30"
-            status="IKUTI"
-          />
+          {loadingActivity ? (
+            <ActivityIndicator style={{ marginTop: 10 }} />
+          ) : activities.length === 0 ? (
+            <Text style={{ color: "#9CA3AF", marginTop: 10 }}>
+              Belum ada aktivitas, yuk mulai belajar!
+            </Text>
+          ) : (
+            activities.slice(0, 3).map((item: any) => (
+              <ActivityCard
+                key={item.id}
+                type={item.type}
+                title={item.title}
+                progress={item.progress} // ✅ FIX UTAMA
+                status={item.status}
+              />
+            ))
+          )}
         </View>
       </View>
     </ScrollView>

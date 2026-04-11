@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function ActivityCard({ title, subtitle, type, status }) {
+export default function ActivityCard({ title, progress, type, status }: any) {
   const getIcon = () => {
     switch (type) {
       case "quiz":
@@ -21,8 +21,8 @@ export default function ActivityCard({ title, subtitle, type, status }) {
         return styles.statusRed;
       case "LANJUT":
         return styles.statusBlue;
-      case "IKUTI":
-        return styles.statusGray;
+      case "SELESAI":
+        return styles.statusGreen;
       default:
         return styles.statusGray;
     }
@@ -38,7 +38,14 @@ export default function ActivityCard({ title, subtitle, type, status }) {
       {/* CONTENT */}
       <View style={{ flex: 1 }}>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+
+        {/* 🔥 FIX: gunakan progress langsung */}
+        <Text style={styles.subtitle}>Progress: {progress}%</Text>
+
+        {/* 🔥 BONUS: progress bar */}
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        </View>
       </View>
 
       {/* STATUS */}
@@ -85,6 +92,21 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
+  /* 🔥 Progress Bar */
+  progressBar: {
+    height: 6,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 10,
+    marginTop: 6,
+    overflow: "hidden",
+  },
+
+  progressFill: {
+    height: 6,
+    backgroundColor: "#2563EB",
+    borderRadius: 10,
+  },
+
   status: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -102,6 +124,10 @@ const styles = StyleSheet.create({
 
   statusBlue: {
     backgroundColor: "#DBEAFE",
+  },
+
+  statusGreen: {
+    backgroundColor: "#DCFCE7",
   },
 
   statusGray: {

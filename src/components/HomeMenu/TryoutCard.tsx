@@ -1,116 +1,136 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function TryoutCard({
   title,
   participants,
+  rating,
+  locked = false,
   image,
-  rating = 4.8,
+  price,
+  onPress,
 }) {
   return (
-    <TouchableOpacity activeOpacity={0.9} style={styles.card}>
-      {/* IMAGE */}
-      <View style={styles.imageWrapper}>
-        <Image
-          source={image || require("../../assets/logo.png")}
-          style={styles.image}
-        />
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={onPress}
+      style={{
+        width: 240,
+        marginRight: 16,
+        borderRadius: 20,
+        backgroundColor: "#fff",
+        overflow: "hidden",
+        elevation: 4,
+      }}
+    >
+      {/* 🔥 IMAGE */}
+      <View style={{ height: 130, backgroundColor: "#E5E7EB" }}>
+        {image ? (
+          <Image
+            source={{ uri: image }}
+            style={{ width: "100%", height: "100%" }}
+          />
+        ) : null}
 
-        {/* RATING */}
-        <View style={styles.rating}>
-          <Ionicons name="star" size={12} color="#FACC15" />
-          <Text style={styles.ratingText}>{rating}</Text>
-        </View>
+        {/* 🔥 BADGE PREMIUM */}
+        {locked && (
+          <View
+            style={{
+              position: "absolute",
+              top: 10,
+              left: 10,
+              backgroundColor: "#F59E0B",
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 10,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <Ionicons name="lock-closed" size={12} color="#fff" />
+            <Text style={{ color: "#fff", fontSize: 10, fontWeight: "600" }}>
+              Premium
+            </Text>
+          </View>
+        )}
+
+        {/* 🔥 DARK OVERLAY */}
+        {locked && (
+          <View
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.35)",
+            }}
+          />
+        )}
       </View>
 
-      {/* CONTENT */}
-      <View style={styles.content}>
-        <Text numberOfLines={2} style={styles.title}>
+      {/* 🔥 CONTENT */}
+      <View style={{ padding: 14 }}>
+        <Text
+          numberOfLines={2}
+          style={{
+            fontWeight: "700",
+            fontSize: 14,
+            color: "#111827",
+          }}
+        >
           {title}
         </Text>
 
-        <Text style={styles.sub}>
-          Peserta{" "}
-          <Text style={{ fontWeight: "600" }}>{participants} Siswa</Text>
+        <Text
+          style={{
+            fontSize: 11,
+            color: "#6B7280",
+            marginTop: 6,
+          }}
+        >
+          📚 {participants}
         </Text>
 
-        {/* BUTTON */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Mulai</Text>
+        {/* 🔥 RATING */}
+        {!locked && (
+          <Text style={{ fontSize: 12, marginTop: 4 }}>⭐ {rating}</Text>
+        )}
+
+        {/* 🔥 PRICE */}
+        {locked && (
+          <Text
+            style={{
+              marginTop: 8,
+              fontSize: 14,
+              fontWeight: "700",
+              color: "#2563EB",
+            }}
+          >
+            Rp {price?.toLocaleString("id-ID")}
+          </Text>
+        )}
+
+        {/* 🔥 BUTTON */}
+        <TouchableOpacity
+          onPress={onPress}
+          style={{
+            marginTop: 10,
+            backgroundColor: locked ? "#2563EB" : "#10B981",
+            paddingVertical: 8,
+            borderRadius: 10,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: 12,
+              fontWeight: "600",
+            }}
+          >
+            {locked ? "Beli Paket" : "Mulai Belajar"}
+          </Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    width: 260,
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    marginRight: 14,
-    overflow: "hidden",
-
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 15,
-    elevation: 4,
-  },
-
-  imageWrapper: {
-    position: "relative",
-  },
-
-  image: {
-    width: "100%",
-    height: 140,
-  },
-
-  rating: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    backgroundColor: "#fff",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-
-  ratingText: {
-    marginLeft: 4,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-
-  content: {
-    padding: 14,
-  },
-
-  title: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  sub: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginTop: 6,
-  },
-
-  button: {
-    marginTop: 12,
-    alignSelf: "flex-end",
-    backgroundColor: "#2563EB",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-});
