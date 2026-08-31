@@ -1,9 +1,23 @@
+import {
+  AnswerPayload,
+  AssessmentAttemptResponse,
+  AssessmentSubmitResponse,
+} from "../types/AssessmentType";
 import { apiFetch } from "./api";
 
-export const saveSoalResult = async (data: any) => {
-  return apiFetch("/soal-result", {
+export const getSoalQuestions = async (
+  setId: number,
+): Promise<AssessmentAttemptResponse> => {
+  return apiFetch<AssessmentAttemptResponse>(`/soal-sets/${setId}/questions`);
+};
+
+export const saveSoalResult = async (data: {
+  attempt_token: string;
+  answers: AnswerPayload;
+}): Promise<AssessmentSubmitResponse> => {
+  return apiFetch<AssessmentSubmitResponse>("/soal-result", {
     method: "POST",
-    body: data, // ✅ sudah benar
+    body: data,
   });
 };
 
@@ -16,5 +30,5 @@ export const checkSoalProgress = async (setId: number) => {
 };
 
 export const getSoalLeaderboard = async (setId: number) => {
-  return await apiFetch(`/soal-leaderboard/${setId}`);
+  return apiFetch(`/soal-leaderboard/${setId}`);
 };

@@ -1,8 +1,7 @@
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { FlatList, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/types";
+import { ActivityIndicator, FlatList, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
   ChapterHeader,
@@ -10,26 +9,24 @@ import {
   ChapterTab,
   ChapterTimelineItem,
 } from "../../components/EBook/EbookDetail";
-
 import VideoPreviewHeader from "../../components/EBook/EbookDetail/VideoPreviewHeader";
-
 import { useEbookDetail } from "../../hooks/useEbookDetail";
+import { RootStackParamList } from "../../navigation/types";
+import { markPdfDone, markVideoDone } from "../../services/progressService";
 import { isItemLocked } from "../../utils/ebookLock";
-
-import { markVideoDone, markPdfDone } from "../../services/progressService";
 
 export default function EbookDetailScreen() {
   const route = useRoute<any>();
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const { chapterId, title, subtitle } = route.params;
 
-  // pastikan id numeric untuk API
   const numericChapterId =
     typeof chapterId === "string"
       ? Number(chapterId.replace("c-", ""))
-      : chapterId;
+      : Number(chapterId);
 
   const {
     tab,
@@ -40,21 +37,62 @@ export default function EbookDetailScreen() {
     setActiveVideoId,
     progress,
     loading,
+    error,
     markItemDone,
   } = useEbookDetail(numericChapterId);
 
   if (loading) {
     return (
       <SafeAreaView
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
       >
-        <Text>Loading...</Text>
+        <ActivityIndicator />
+
+        <Text
+          style={{
+            marginTop: 8,
+          }}
+        >
+          Memuat materi...
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+          backgroundColor: "#fff",
+        }}
+      >
+        <Text
+          style={{
+            color: "#DC2626",
+            textAlign: "center",
+          }}
+        >
+          {error}
+        </Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "#fff",
+      }}
+    >
       <ChapterHeader title={title} />
 
       <ChapterProgressCard
@@ -67,7 +105,10 @@ export default function EbookDetailScreen() {
         <VideoPreviewHeader
           title={headerVideo.title}
           duration={headerVideo.duration}
+          sourceType={headerVideo.sourceType}
           youtubeId={headerVideo.youtubeId}
+          videoUrl={headerVideo.videoUrl}
+          requiresAuth={headerVideo.requiresAuth}
         />
       )}
 
@@ -76,7 +117,9 @@ export default function EbookDetailScreen() {
       <FlatList
         data={filteredItems ?? []}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 20 }}
+        contentContainerStyle={{
+          padding: 20,
+        }}
         renderItem={({ item }) => {
           const isLocked = isItemLocked(item, chapterItems);
 
@@ -87,43 +130,43 @@ export default function EbookDetailScreen() {
               done={item.isDone}
               locked={isLocked}
               type={item.type}
-              youtubeId={item.youtubeId}
+              youtubeId={item.youtubeId ?? undefined}
               onPress={async () => {
-                if (isLocked) return;
+                if (isLocked) {
+                  return;
+                }
 
                 try {
-                  // ================= VIDEO =================
-
                   if (item.type === "video") {
-                    setActiveVideoId(item.youtubeId!);
+                    setActiveVideoId(item.id);
 
                     markItemDone(item.id);
 
-                    const videoId = Number(item.id.replace("v-", ""));
+                    const videoId =
+                      item.resourceId ?? Number(item.id.replace("v-", ""));
 
-                    await markVideoDone(numericChapterId, videoId);
+                    await markVideoDone(String(numericChapterId), videoId);
                   }
 
-                  // ================= PDF =================
-
                   if (item.type === "rangkuman") {
+                    const pdfId =
+                      item.resourceId ?? Number(item.id.replace("r-", ""));
+
+                    await markPdfDone(String(numericChapterId), pdfId);
+
                     markItemDone(item.id);
-
-                    const pdfId = Number(item.id.replace("r-", ""));
-
-                    await markPdfDone(numericChapterId, pdfId);
 
                     navigation.navigate("MateriDetail", {
                       title: item.title,
-                      pdfUrl: item.pdfUrl!,
+                      pdfUrl: item.pdfUrl ?? "",
+                      resourceId: pdfId,
+                      requiresAuth: Boolean(item.requiresAuth),
                     });
                   }
 
-                  // ================= QUIZ =================
-
                   if (item.type === "kuis") {
                     navigation.navigate("Quiz", {
-                      chapterId: numericChapterId,
+                      chapterId: String(numericChapterId),
                       source: "quiz",
                     });
                   }

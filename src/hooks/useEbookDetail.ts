@@ -2,18 +2,24 @@ import { useEffect, useMemo, useState } from "react";
 import { getChapterDetail } from "../services/chapterService";
 import { ChapterDetailItem } from "../types/ChapterType";
 
-export function useEbookDetail(chapterId: string) {
+export function useEbookDetail(chapterId: string | number) {
   const [tab, setTab] = useState<"video" | "rangkuman" | "kuis">("video");
+
   const [chapterItems, setChapterItems] = useState<ChapterDetailItem[]>([]);
+
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
 
-  // ================= LOAD DATA =================
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const load = async () => {
       try {
         setLoading(true);
+        setError(null);
 
         const numericId =
           typeof chapterId === "string"
@@ -22,58 +28,80 @@ export function useEbookDetail(chapterId: string) {
 
         const data = await getChapterDetail(numericId);
 
-        setChapterItems(data || []);
-      } catch (e) {
-        console.log("chapter detail error:", e);
+        if (!mounted) {
+          return;
+        }
+
+        setChapterItems(data ?? []);
+
+        const firstVideo = (data ?? []).find((item) => item.type === "video");
+
+        setActiveVideoId(firstVideo?.id ?? null);
+      } catch (err: any) {
+        if (!mounted) {
+          return;
+        }
+
+        setError(err?.message ?? "Gagal memuat materi.");
+
         setChapterItems([]);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     load();
+
+    return () => {
+      mounted = false;
+    };
   }, [chapterId]);
 
-  // ================= FILTER =================
-
   const videoItems = useMemo(
-    () => chapterItems.filter((i) => i.type === "video"),
+    () => chapterItems.filter((item) => item.type === "video"),
     [chapterItems],
   );
 
   const filteredItems = useMemo(
-    () => chapterItems.filter((i) => i.type === tab),
+    () => chapterItems.filter((item) => item.type === tab),
     [chapterItems, tab],
   );
 
-  // ================= HEADER VIDEO =================
-
   const headerVideo = useMemo(() => {
-    if (!videoItems.length) return null;
+    if (!videoItems.length) {
+      return null;
+    }
 
-    if (!activeVideoId) return videoItems[0];
+    if (!activeVideoId) {
+      return videoItems[0];
+    }
 
     return (
-      videoItems.find((v) => v.youtubeId === activeVideoId) || videoItems[0]
+      videoItems.find((video) => video.id === activeVideoId) ?? videoItems[0]
     );
   }, [activeVideoId, videoItems]);
 
-  // ================= PROGRESS =================
-
   const progress = useMemo(() => {
-    if (!chapterItems.length) return 0;
+    if (!chapterItems.length) {
+      return 0;
+    }
 
-    const done = chapterItems.filter((i) => i.isDone).length;
+    const done = chapterItems.filter((item) => item.isDone).length;
 
     return Math.round((done / chapterItems.length) * 100);
   }, [chapterItems]);
 
-  // ================= MARK DONE (REALTIME) =================
-
   const markItemDone = (itemId: string) => {
-    setChapterItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, isDone: true } : item,
+    setChapterItems((previous) =>
+      previous.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              isDone: true,
+            }
+          : item,
       ),
     );
   };
@@ -89,6 +117,7 @@ export function useEbookDetail(chapterId: string) {
     setActiveVideoId,
     progress,
     loading,
+    error,
     markItemDone,
   };
 }

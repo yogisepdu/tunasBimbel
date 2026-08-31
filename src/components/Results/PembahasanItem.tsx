@@ -1,27 +1,34 @@
-import { View, Text } from "react-native";
+import { Text, View } from "react-native";
 import { resultStyles } from "../../assets/styles/resultStyles";
+import { AssessmentQuestion } from "../../types/AssessmentType";
 
 type Props = {
-  question: any;
-  userAnswer?: string;
+  question: AssessmentQuestion;
+  userAnswer?: string | null;
+  correctAnswer?: string | null;
   nomor: number;
 };
 
-export default function PembahasanItem({ question, userAnswer, nomor }: Props) {
-  const correctAnswer = question.correctAnswer ?? question.correct_answer;
-
+export default function PembahasanItem({
+  question,
+  userAnswer,
+  correctAnswer,
+  nomor,
+}: Props) {
   return (
     <View style={resultStyles.card}>
       <Text style={resultStyles.nomor}>Soal {nomor}</Text>
+
       <Text style={resultStyles.soal}>{question.text}</Text>
 
-      {question.options.map((opt: any) => {
-        const isCorrect = opt.key === correctAnswer;
-        const isUser = opt.key === userAnswer;
+      {question.options.map((option) => {
+        const isCorrect = option.key === correctAnswer;
+
+        const isUser = option.key === userAnswer;
 
         return (
           <View
-            key={opt.key}
+            key={option.key}
             style={[
               resultStyles.option,
               isCorrect && resultStyles.correct,
@@ -29,17 +36,35 @@ export default function PembahasanItem({ question, userAnswer, nomor }: Props) {
             ]}
           >
             <Text>
-              {opt.key}. {opt.text}
+              {option.key}. {option.text}
             </Text>
           </View>
         );
       })}
 
       {!userAnswer && (
-        <Text style={{ color: "gray", marginTop: 5 }}>Tidak dijawab</Text>
+        <Text
+          style={{
+            color: "gray",
+            marginTop: 5,
+          }}
+        >
+          Tidak dijawab
+        </Text>
       )}
 
-      <Text style={resultStyles.answer}>Jawaban benar: {correctAnswer}</Text>
+      {correctAnswer ? (
+        <Text style={resultStyles.answer}>Jawaban benar: {correctAnswer}</Text>
+      ) : (
+        <Text
+          style={{
+            color: "#6B7280",
+            marginTop: 8,
+          }}
+        >
+          Kunci jawaban tidak tersedia untuk hasil lama.
+        </Text>
+      )}
     </View>
   );
 }

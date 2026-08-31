@@ -1,3 +1,8 @@
+import {
+  AssessmentQuestion,
+  AssessmentReviewItem,
+} from "../types/AssessmentType";
+
 export type RootStackParamList = {
   Login:
     | {
@@ -25,29 +30,40 @@ export type RootStackParamList = {
     title: string;
     subtitle?: string;
     progress: number;
-    videoUrl: string;
+    videoUrl?: string;
   };
 
   MateriDetail: {
     title: string;
     pdfUrl: string;
+
+    /**
+     * ID asli materi_pdfs.
+     */
+    resourceId?: number;
+
+    /**
+     * true untuk file pada private storage.
+     */
+    requiresAuth?: boolean;
   };
 
   VideoDetail: {
     chapterId: string;
     title: string;
-    youtubeId: string;
+    youtubeId?: string;
+    videoUrl?: string;
+    sourceType?: "youtube" | "private_file";
+    requiresAuth?: boolean;
   };
 
-  // 🔥 FIX BESAR
   Quiz: {
     source: "quiz" | "soal";
 
-    // quiz
     chapterId?: string;
+
     quizId?: number;
 
-    // soal
     setId?: number;
   };
 
@@ -61,22 +77,41 @@ export type RootStackParamList = {
   Result: {
     source: "quiz" | "soal";
 
-    quizId: number; // universal id
-    setId?: number; // 🔥 TAMBAHAN
+    chapterId?: number;
+
+    quizId: number;
+
+    setId?: number;
 
     title: string;
+
     total: number;
+
     correct: number;
+
     wrong: number;
+
     empty: number;
+
     score: number;
 
     userAnswers: {
       questionId: number;
       selectedAnswer?: string;
     }[];
+
+    /**
+     * Questions TANPA correctAnswer.
+     */
+    questions?: AssessmentQuestion[];
+
+    /**
+     * Kunci jawaban baru dikirim backend SETELAH submit.
+     */
+    review?: AssessmentReviewItem[];
   };
 
   Kalender: undefined;
+
   EditProfile: undefined;
 };

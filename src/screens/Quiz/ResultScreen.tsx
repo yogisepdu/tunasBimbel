@@ -1,172 +1,76 @@
-import { ScrollView, Text, ActivityIndicator, View } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/types";
-import { useMemo, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
-import { calculateStatistics } from "../../utils/statisticHelper";
-
-import ResultTabs from "../../components/Results/ResultTabs";
-import StatistikSection from "../../components/Results/StatistikSection";
+import { resultStyles } from "../../assets/styles/resultStyles";
 import PembahasanSection from "../../components/Results/PembahasanSection";
 import PeringkatSection from "../../components/Results/PeringkatSection";
-import { resultStyles } from "../../assets/styles/resultStyles";
-
-import { markQuizDone } from "../../services/progressService";
-import { getQuizQuestions } from "../../services/quizService";
-import { apiFetch } from "../../services/api";
+import ResultTabs from "../../components/Results/ResultTabs";
+import StatistikSection from "../../components/Results/StatistikSection";
+import { RootStackParamList } from "../../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 
-// 🔥 HELPER NORMALISASI
-const normalizeQuestion = (q: any) => ({
-  id: q.id,
-  text: q.text,
-  options: (q.options || []).map((opt: any) => ({
-    key: opt.key ?? opt.option_key ?? opt.label,
-    text: opt.text ?? opt.option_text ?? opt.value,
-  })),
-  correctAnswer: q.correctAnswer ?? q.correct_answer,
-});
-
 export default function ResultScreen({ route }: Props) {
-  const { score, source, userAnswers, quizId, chapterId, setId } = route.params;
+  const {
+    score,
+    source,
+    quizId,
+    setId,
+    correct,
+    wrong,
+    empty,
+    questions = [],
+    review = [],
+  } = route.params;
 
   const [activeTab, setActiveTab] = useState<
     "Statistik" | "Pembahasan" | "Peringkat"
   >("Statistik");
 
-  const [questions, setQuestions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [resultData, setResultData] = useState<any>(null);
 
-  const soalSetId = Number(setId);
-  const quizChapterId =
-    typeof chapterId === "string"
-      ? Number(chapterId.replace("c-", ""))
-      : Number(chapterId);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  // ================= FINAL DATA (WAJIB DI ATAS) =================
-  const finalScore = resultData?.score ?? score ?? 0;
-  const finalAnswers = resultData?.userAnswers ?? userAnswers ?? [];
-
-  // ================= LOAD USER =================
   useEffect(() => {
-    (async () => {
-      const u = await AsyncStorage.getItem("user");
-      if (u) setUser(JSON.parse(u));
-    })();
+    const loadUser = async () => {
+      try {
+        const raw = await AsyncStorage.getItem("user");
+
+        if (raw) {
+          setUser(JSON.parse(raw));
+        }
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    loadUser();
   }, []);
 
-  // console.log("🔥 PARAMS RESULT:", {
-  //   chapterId,
-  //   quizId,
-  //   source,
-  // });
-  // ================= LOAD RESULT =================
-  useEffect(() => {
-    const loadResult = async () => {
-      try {
-        if (source === "quiz") {
-          if (!quizChapterId || isNaN(quizChapterId)) {
-            console.log("❌ INVALID quizChapterId:", chapterId);
-            setLoading(false);
-            return;
-          }
+  const stats = useMemo(
+    () => ({
+      benar: Number(correct ?? 0),
+      salah: Number(wrong ?? 0),
+      kosong: Number(empty ?? 0),
+    }),
+    [correct, wrong, empty],
+  );
 
-          const res = await apiFetch(`/quiz-progress/${quizChapterId}`);
-
-          if (res?.has_done && res?.result) {
-            setResultData({
-              score: res.result.score,
-              userAnswers: (res.result.answers || []).map((a: any) => ({
-                questionId: a.questionId ?? a.question_id,
-                selectedAnswer: a.selectedAnswer ?? a.answer,
-              })),
-            });
-          }
-        }
-
-        if (source === "soal") {
-          if (!soalSetId) return;
-
-          const res = await apiFetch(`/soal-progress/${soalSetId}`);
-
-          if (res?.has_done && res?.result) {
-            setResultData({
-              score: res.result.score,
-              userAnswers: (res.result.answers || []).map((a: any) => ({
-                questionId: a.questionId ?? a.question_id,
-                selectedAnswer: a.selectedAnswer ?? a.answer,
-              })),
-            });
-          }
-        }
-      } catch (err) {
-        console.log("❌ load result error:", err);
-      }
-    };
-
-    loadResult();
-  }, [source, chapterId, setId]);
-
-  // ================= LOAD QUESTIONS =================
-  useEffect(() => {
-    const loadQuestions = async () => {
-      try {
-        if (source === "soal") {
-          if (!soalSetId) return;
-
-          const res = await apiFetch(`/soal-sets/${soalSetId}/questions`);
-          setQuestions((res.questions || []).map(normalizeQuestion));
-          return;
-        }
-
-        if (!quizChapterId || isNaN(quizChapterId)) {
-          console.log("❌ INVALID quizChapterId:", chapterId);
-          setLoading(false);
-          return;
-        }
-
-        const res = await getQuizQuestions(quizChapterId);
-        setQuestions((res?.questions || []).map(normalizeQuestion));
-      } catch (err) {
-        console.log("❌ load questions error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadQuestions();
-  }, [source, setId, chapterId]);
+  const finalScore = Number(score ?? 0);
 
   const isPassed = finalScore >= 70;
 
-  // ================= STAT =================
-  const stats = useMemo(() => {
-    if (!questions.length) {
-      return { benar: 0, salah: 0, kosong: 0 };
-    }
-
-    return calculateStatistics(questions, finalAnswers);
-  }, [questions, finalAnswers]);
-
-  // ================= PROGRESS =================
-  useEffect(() => {
-    if (source !== "quiz") return;
-    if (!quizId) return;
-
-    markQuizDone(chapterId, quizId);
-  }, []);
-
-  // ================= LOADING =================
-  if (loading) {
+  if (loadingUser) {
     return (
       <View
         style={[
           resultStyles.container,
-          { justifyContent: "center", alignItems: "center" },
+          {
+            justifyContent: "center",
+            alignItems: "center",
+          },
         ]}
       >
         <ActivityIndicator size="large" />
@@ -175,7 +79,6 @@ export default function ResultScreen({ route }: Props) {
     );
   }
 
-  // ================= UI =================
   return (
     <ScrollView style={resultStyles.container}>
       <Text style={resultStyles.header}>
@@ -193,13 +96,13 @@ export default function ResultScreen({ route }: Props) {
       )}
 
       {activeTab === "Pembahasan" && (
-        <PembahasanSection questions={questions} userAnswers={finalAnswers} />
+        <PembahasanSection questions={questions} review={review} />
       )}
 
       {activeTab === "Peringkat" && (
         <PeringkatSection
           quizId={source === "quiz" ? quizId : undefined}
-          setId={source === "soal" ? soalSetId : undefined}
+          setId={source === "soal" ? setId : undefined}
           currentUser={user?.name}
         />
       )}

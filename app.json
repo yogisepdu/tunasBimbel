@@ -34,7 +34,8 @@
     },
     "owner": "yosep27",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-video"
     ]
   }
 }

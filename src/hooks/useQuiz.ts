@@ -1,215 +1,280 @@
-import { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getQuizQuestions } from "../services/quizService";
-import { apiFetch } from "../services/api";
+import { getSoalQuestions } from "../services/soalService";
+import {
+  AnswerPayload,
+  AssessmentQuestion,
+  AssessmentSource,
+} from "../types/AssessmentType";
 
-type QuizSource = "quiz" | "soal";
+type SavedProgress = {
+  attemptToken: string;
+  currentIndex: number;
+  answers: Record<number, string>;
+};
 
-const STORAGE_KEY = (chapterId: string | number, source: QuizSource) =>
-  `quiz_progress_${source}_${chapterId}`;
+const STORAGE_KEY = (id: string | number, source: AssessmentSource) =>
+  `assessment_progress_${source}_${id}`;
+
+type QuizMeta = {
+  id: number;
+  title: string;
+  duration: number;
+  attemptToken: string;
+  startedAt: string;
+  expiresAt: string;
+};
 
 export function useQuiz(
-  chapterId: string | number,
-  source: QuizSource,
-  onTimeUp?: (result: any) => void,
+  sourceId: string | number | null | undefined,
+  source: AssessmentSource,
+  enabled: boolean = true,
 ) {
-  const [meta, setMeta] = useState({
+  const [meta, setMeta] = useState<QuizMeta>({
     id: 0,
     title: "",
     duration: 0,
+    attemptToken: "",
+    startedAt: "",
+    expiresAt: "",
   });
 
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
+
   const [answers, setAnswers] = useState<Record<number, string>>({});
+
   const [timeLeft, setTimeLeft] = useState(0);
 
-  const hasSubmitted = useRef(false);
+  const [loading, setLoading] = useState(false);
 
-  // ================= LOAD =================
+  const [error, setError] = useState<string | null>(null);
+
+  const [isTimeUp, setIsTimeUp] = useState(false);
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const numericId = useMemo(() => {
+    if (sourceId === null || sourceId === undefined) {
+      return 0;
+    }
+
+    if (typeof sourceId === "number") {
+      return sourceId;
+    }
+
+    return Number(sourceId.replace("c-", ""));
+  }, [sourceId]);
+
   useEffect(() => {
-    const loadQuiz = async () => {
+    if (!enabled || !numericId || Number.isNaN(numericId)) {
+      return;
+    }
+
+    let mounted = true;
+
+    const loadAssessment = async () => {
       try {
-        const id = Number(
-          typeof chapterId === "string"
-            ? chapterId.replace("c-", "")
-            : chapterId,
-        );
+        setLoading(true);
+        setError(null);
+        setIsTimeUp(false);
 
-        // console.log("🔥 FETCH SOAL ID:", id, "SOURCE:", source);
+        const response =
+          source === "quiz"
+            ? await getQuizQuestions(numericId)
+            : await getSoalQuestions(numericId);
 
-        // ❌ GUARD biar gak error lagi
-        if (!id || isNaN(id)) {
-          console.log("❌ ID INVALID:", chapterId);
-          return;
-        }
+        if (!mounted) return;
 
-        // ================= SOAL =================
-        if (source === "soal") {
-          const res = await apiFetch(`/soal-sets/${id}/questions`);
+        const attemptToken = response.attempt_token;
 
-          const mapped = res.questions.map((q: any) => ({
-            id: q.id,
-            text: q.text,
-            options: q.options.map((opt: any) => ({
-              key: opt.key,
-              text: opt.text,
-            })),
-            correctAnswer: q.correctAnswer,
-          }));
+        const expiresAt = response.expires_at;
 
-          setQuestions(mapped);
-
-          setMeta({
-            id: res.set_id ?? id,
-            title: res.title ?? "Try Out",
-            duration: (res.duration ?? 0) * 60,
-          });
-
-          setTimeLeft((res.duration ?? 0) * 60);
-
-          return;
-        }
-
-        // ================= QUIZ =================
-        const res = await getQuizQuestions(id);
-
-        const mapped = (res.questions || []).map((q: any) => ({
-          id: q.id,
-          text: q.text,
-          options: (q.options || []).map((opt: any) => ({
-            key: opt.key ?? opt.option_key ?? opt.label,
-            text: opt.text ?? opt.option_text ?? opt.value,
-          })),
-          correctAnswer: q.correctAnswer ?? q.correct_answer,
-        }));
-
-        setQuestions(mapped);
+        const id =
+          source === "quiz"
+            ? Number(response.quiz_id ?? 0)
+            : Number(response.set_id ?? numericId);
 
         setMeta({
-          id: res.quiz_id,
-          title: res.title,
-          duration: res.duration * 60,
+          id,
+          title: response.title ?? (source === "quiz" ? "Quiz" : "Try Out"),
+          duration: Number(response.duration ?? 0) * 60,
+          attemptToken,
+          startedAt: response.started_at,
+          expiresAt,
         });
 
-        setTimeLeft(res.duration * 60);
-      } catch (err) {
-        console.log("quiz load error:", err);
+        setQuestions(response.questions ?? []);
+
+        const savedRaw = await AsyncStorage.getItem(
+          STORAGE_KEY(numericId, source),
+        );
+
+        if (savedRaw && mounted) {
+          try {
+            const saved: SavedProgress = JSON.parse(savedRaw);
+
+            if (saved.attemptToken === attemptToken) {
+              setCurrentIndex(saved.currentIndex ?? 0);
+
+              setAnswers(saved.answers ?? {});
+            } else {
+              await AsyncStorage.removeItem(STORAGE_KEY(numericId, source));
+
+              setCurrentIndex(0);
+              setAnswers({});
+            }
+          } catch {
+            await AsyncStorage.removeItem(STORAGE_KEY(numericId, source));
+
+            setCurrentIndex(0);
+            setAnswers({});
+          }
+        }
+
+        const remainingSeconds = Math.max(
+          0,
+          Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000),
+        );
+
+        setTimeLeft(remainingSeconds);
+
+        if (remainingSeconds <= 0) {
+          setIsTimeUp(true);
+        }
+      } catch (err: any) {
+        if (!mounted) return;
+
+        setError(err?.message ?? "Gagal memuat soal.");
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    loadQuiz();
-  }, [chapterId, source]);
+    loadAssessment();
 
-  // ================= RESUME (QUIZ ONLY) =================
+    return () => {
+      mounted = false;
+    };
+  }, [enabled, numericId, source]);
+
   useEffect(() => {
-    if (source !== "quiz") return;
+    if (!enabled || !meta.expiresAt) {
+      return;
+    }
 
-    (async () => {
-      const saved = await AsyncStorage.getItem(STORAGE_KEY(chapterId, source));
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
 
-      if (saved) {
-        const data = JSON.parse(saved);
-        setCurrentIndex(data.currentIndex);
-        setAnswers(data.answers);
-        setTimeLeft(data.timeLeft);
-      }
-    })();
-  }, [chapterId, source]);
+    const updateTimer = () => {
+      const remainingSeconds = Math.max(
+        0,
+        Math.ceil((new Date(meta.expiresAt).getTime() - Date.now()) / 1000),
+      );
 
-  // ================= TIMER =================
-  useEffect(() => {
-    if (!meta.duration) return;
+      setTimeLeft(remainingSeconds);
 
-    const timer = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(timer);
+      if (remainingSeconds <= 0) {
+        setIsTimeUp(true);
 
-          if (!hasSubmitted.current) {
-            hasSubmitted.current = true;
-            const result = submitQuiz();
-            onTimeUp?.(result);
-          }
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
 
-          return 0;
+          timerRef.current = null;
         }
+      }
+    };
 
-        return t - 1;
-      });
-    }, 1000);
+    updateTimer();
 
-    return () => clearInterval(timer);
-  }, [meta.duration]);
+    timerRef.current = setInterval(updateTimer, 1000);
 
-  // ================= SAVE (QUIZ ONLY) =================
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+
+        timerRef.current = null;
+      }
+    };
+  }, [enabled, meta.expiresAt]);
+
   useEffect(() => {
-    if (source !== "quiz") return;
+    if (!enabled || !numericId || !meta.attemptToken) {
+      return;
+    }
 
-    AsyncStorage.setItem(
-      STORAGE_KEY(chapterId, source),
-      JSON.stringify({
+    const save = async () => {
+      const payload: SavedProgress = {
+        attemptToken: meta.attemptToken,
         currentIndex,
         answers,
-        timeLeft,
-      }),
-    );
-  }, [currentIndex, answers, timeLeft]);
+      };
 
-  // ================= LOGIC =================
-  const selectAnswer = (opt: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentIndex]: opt,
+      await AsyncStorage.setItem(
+        STORAGE_KEY(numericId, source),
+        JSON.stringify(payload),
+      );
+    };
+
+    save();
+  }, [enabled, numericId, source, meta.attemptToken, currentIndex, answers]);
+
+  const selectAnswer = (option: string) => {
+    setAnswers((previous) => ({
+      ...previous,
+      [currentIndex]: option,
     }));
   };
 
-  const submitQuiz = () => {
-    let correct = 0;
-    let wrong = 0;
-    let empty = 0;
+  const buildAnswerPayload = (): AnswerPayload => {
+    const payload: AnswerPayload = {};
 
-    const userAnswers = questions.map((q, index) => {
+    questions.forEach((question, index) => {
       const selected = answers[index];
 
-      if (!selected) empty++;
-      else if (selected === q.correctAnswer) correct++;
-      else wrong++;
-
-      return {
-        questionId: q.id,
-        selectedAnswer: selected,
-      };
+      if (selected) {
+        payload[question.id] = selected;
+      }
     });
 
-    const score = questions.length
-      ? Math.round((correct / questions.length) * 100)
-      : 0;
+    return payload;
+  };
 
-    return {
-      chapterId,
-      quizId: meta.id, // 🔥 ini jadi soal_set_id juga
-      setId: source === "soal" ? meta.id : undefined, // 🔥 AUTO ISI
-      source,
-      title: meta.title,
-      total: questions.length,
-      correct,
-      wrong,
-      empty,
-      score,
-      userAnswers,
-    };
+  const userAnswers = useMemo(
+    () =>
+      questions.map((question, index) => ({
+        questionId: question.id,
+        selectedAnswer: answers[index],
+      })),
+    [questions, answers],
+  );
+
+  const clearSavedProgress = async () => {
+    if (!numericId) return;
+
+    await AsyncStorage.removeItem(STORAGE_KEY(numericId, source));
   };
 
   return {
     meta,
+    questions,
     question: questions[currentIndex],
     total: questions.length,
     currentIndex,
     answers,
     timeLeft,
+    loading,
+    error,
+    isTimeUp,
     setCurrentIndex,
     selectAnswer,
-    submitQuiz,
+    buildAnswerPayload,
+    userAnswers,
+    clearSavedProgress,
   };
 }
