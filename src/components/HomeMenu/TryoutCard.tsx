@@ -1,135 +1,283 @@
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
+
+type TryoutCardProps = {
+  title: string;
+
+  participants: string;
+
+  rating: number;
+
+  locked?: boolean;
+
+  image?: string | null;
+
+  price?: number;
+
+  onPress?: () => void;
+
+  fullWidth?: boolean;
+};
 
 export default function TryoutCard({
   title,
+
   participants,
+
   rating,
+
   locked = false,
+
   image,
+
   price,
+
   onPress,
-}) {
+
+  fullWidth = false,
+}: TryoutCardProps) {
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
+      activeOpacity={0.92}
       onPress={onPress}
       style={{
-        width: 240,
-        marginRight: 16,
+        width: fullWidth ? "100%" : 240,
+
+        marginRight: fullWidth ? 0 : 16,
+
+        marginBottom: fullWidth ? 0 : 0,
+
         borderRadius: 20,
-        backgroundColor: "#fff",
+
+        backgroundColor: "#FFFFFF",
+
         overflow: "hidden",
+
         elevation: 4,
+
+        shadowColor: "#000000",
+
+        shadowOffset: {
+          width: 0,
+
+          height: 3,
+        },
+
+        shadowOpacity: 0.08,
+
+        shadowRadius: 8,
       }}
     >
-      {/* 🔥 IMAGE */}
-      <View style={{ height: 130, backgroundColor: "#E5E7EB" }}>
+      {/* ================================================================ */}
+      {/* IMAGE                                                            */}
+      {/* ================================================================ */}
+
+      <View
+        style={{
+          height: 150,
+
+          backgroundColor: "#E5E7EB",
+        }}
+      >
         {image ? (
           <Image
-            source={{ uri: image }}
-            style={{ width: "100%", height: "100%" }}
-          />
-        ) : null}
+            source={{
+              uri: image,
+            }}
+            style={{
+              width: "100%",
 
-        {/* 🔥 BADGE PREMIUM */}
+              height: "100%",
+            }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View
+            style={{
+              flex: 1,
+
+              alignItems: "center",
+
+              justifyContent: "center",
+
+              backgroundColor: "#E2E8F0",
+            }}
+          >
+            <Ionicons name="book-outline" size={42} color="#94A3B8" />
+          </View>
+        )}
+
+        {/* ============================================================ */}
+        {/* PREMIUM BADGE                                                 */}
+        {/* ============================================================ */}
+
         {locked && (
           <View
             style={{
               position: "absolute",
+
               top: 10,
+
               left: 10,
+
               backgroundColor: "#F59E0B",
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              borderRadius: 10,
+
+              paddingHorizontal: 9,
+
+              paddingVertical: 5,
+
+              borderRadius: 12,
+
               flexDirection: "row",
+
               alignItems: "center",
-              gap: 4,
+
+              gap: 5,
             }}
           >
-            <Ionicons name="lock-closed" size={12} color="#fff" />
-            <Text style={{ color: "#fff", fontSize: 10, fontWeight: "600" }}>
+            <Ionicons name="lock-closed" size={12} color="#FFFFFF" />
+
+            <Text
+              style={{
+                color: "#FFFFFF",
+
+                fontSize: 10,
+
+                fontWeight: "700",
+              }}
+            >
               Premium
             </Text>
           </View>
         )}
 
-        {/* 🔥 DARK OVERLAY */}
+        {/* ============================================================ */}
+        {/* IMAGE OVERLAY                                                 */}
+        {/* ============================================================ */}
+
         {locked && (
           <View
             style={{
               position: "absolute",
-              inset: 0,
-              backgroundColor: "rgba(0,0,0,0.35)",
+
+              top: 0,
+
+              right: 0,
+
+              bottom: 0,
+
+              left: 0,
+
+              backgroundColor: "rgba(0,0,0,0.25)",
             }}
           />
         )}
       </View>
 
-      {/* 🔥 CONTENT */}
-      <View style={{ padding: 14 }}>
+      {/* ================================================================ */}
+      {/* CONTENT                                                          */}
+      {/* ================================================================ */}
+
+      <View
+        style={{
+          padding: 15,
+        }}
+      >
+        {/* TITLE */}
+
         <Text
           numberOfLines={2}
           style={{
             fontWeight: "700",
-            fontSize: 14,
+
+            fontSize: 15,
+
+            lineHeight: 21,
+
             color: "#111827",
           }}
         >
           {title}
         </Text>
 
+        {/* PARTICIPANTS */}
+
         <Text
           style={{
-            fontSize: 11,
+            fontSize: 12,
+
             color: "#6B7280",
-            marginTop: 6,
+
+            marginTop: 7,
           }}
         >
           📚 {participants}
         </Text>
 
-        {/* 🔥 RATING */}
-        {!locked && (
-          <Text style={{ fontSize: 12, marginTop: 4 }}>⭐ {rating}</Text>
-        )}
+        {/* RATING */}
 
-        {/* 🔥 PRICE */}
-        {locked && (
+        {!locked && (
           <Text
             style={{
-              marginTop: 8,
-              fontSize: 14,
-              fontWeight: "700",
-              color: "#2563EB",
+              fontSize: 12,
+
+              marginTop: 5,
+
+              color: "#374151",
             }}
           >
-            Rp {price?.toLocaleString("id-ID")}
+            ⭐ {rating}
           </Text>
         )}
 
-        {/* 🔥 BUTTON */}
-        <TouchableOpacity
-          onPress={onPress}
+        {/* PRICE */}
+
+        {locked && (
+          <Text
+            style={{
+              marginTop: 9,
+
+              fontSize: 15,
+
+              fontWeight: "700",
+
+              color: "#2563EB",
+            }}
+          >
+            Rp {Number(price ?? 0).toLocaleString("id-ID")}
+          </Text>
+        )}
+
+        {/* ============================================================ */}
+        {/* ACTION BUTTON                                                 */}
+        {/* ============================================================ */}
+
+        <View
           style={{
-            marginTop: 10,
+            marginTop: 11,
+
             backgroundColor: locked ? "#2563EB" : "#10B981",
-            paddingVertical: 8,
-            borderRadius: 10,
+
+            paddingVertical: 10,
+
+            borderRadius: 11,
+
             alignItems: "center",
           }}
         >
           <Text
             style={{
-              color: "#fff",
-              fontSize: 12,
-              fontWeight: "600",
+              color: "#FFFFFF",
+
+              fontSize: 13,
+
+              fontWeight: "700",
             }}
           >
-            {locked ? "Beli Paket" : "Mulai Belajar"}
+            {locked ? "Lihat Paket" : "Beli Paket"}
           </Text>
-        </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );

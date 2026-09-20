@@ -1,11 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { resetToLogin } from "../navigation/navigationRef";
 
 const envApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 
-export const API_URL = (
-  envApiUrl && envApiUrl.length > 0 ? envApiUrl : "http://10.0.2.2:8000"
-).replace(/\/+$/, "");
+if (!envApiUrl) {
+  throw new Error("EXPO_PUBLIC_API_URL belum dikonfigurasi.");
+}
+
+export const API_URL = envApiUrl.replace(/\/+$/, "");
 
 export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 

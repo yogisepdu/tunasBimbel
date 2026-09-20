@@ -1,73 +1,156 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+
+import { useFocusEffect } from "@react-navigation/native";
+
 import { getChapterDetail } from "../services/chapterService";
+
 import { ChapterDetailItem } from "../types/ChapterType";
 
 export function useEbookDetail(chapterId: string | number) {
+  /*
+  |--------------------------------------------------------------------------
+  | Tab
+  |--------------------------------------------------------------------------
+  */
+
   const [tab, setTab] = useState<"video" | "rangkuman" | "kuis">("video");
+
+  /*
+  |--------------------------------------------------------------------------
+  | Chapter Items
+  |--------------------------------------------------------------------------
+  */
 
   const [chapterItems, setChapterItems] = useState<ChapterDetailItem[]>([]);
 
+  /*
+  |--------------------------------------------------------------------------
+  | Active Video
+  |--------------------------------------------------------------------------
+  */
+
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Loading / Error
+  |--------------------------------------------------------------------------
+  */
 
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let mounted = true;
+  /*
+  |--------------------------------------------------------------------------
+  | Server Progress
+  |--------------------------------------------------------------------------
+  */
 
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const [serverProgress, setServerProgress] = useState(0);
 
-        const numericId =
-          typeof chapterId === "string"
-            ? chapterId.replace("c-", "")
-            : chapterId;
+  /*
+  |--------------------------------------------------------------------------
+  | Load Chapter
+  |--------------------------------------------------------------------------
+  */
 
-        const data = await getChapterDetail(numericId);
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        if (!mounted) {
-          return;
-        }
+      setError(null);
 
-        setChapterItems(data ?? []);
+      const numericId =
+        typeof chapterId === "string"
+          ? Number(chapterId.replace("c-", ""))
+          : Number(chapterId);
 
-        const firstVideo = (data ?? []).find((item) => item.type === "video");
-
-        setActiveVideoId(firstVideo?.id ?? null);
-      } catch (err: any) {
-        if (!mounted) {
-          return;
-        }
-
-        setError(err?.message ?? "Gagal memuat materi.");
-
-        setChapterItems([]);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+      if (!Number.isInteger(numericId) || numericId <= 0) {
+        throw new Error("ID chapter tidak valid.");
       }
-    };
 
-    load();
+      const response = await getChapterDetail(numericId);
 
-    return () => {
-      mounted = false;
-    };
+      /*
+      |--------------------------------------------------------------------------
+      | Items
+      |--------------------------------------------------------------------------
+      */
+
+      setChapterItems(response.items);
+
+      /*
+      |--------------------------------------------------------------------------
+      | Progress dari server
+      |--------------------------------------------------------------------------
+      */
+
+      setServerProgress(response.progress.percent);
+
+      /*
+      |--------------------------------------------------------------------------
+      | Video pertama
+      |--------------------------------------------------------------------------
+      */
+
+      const firstVideo = response.items.find((item) => item.type === "video");
+
+      setActiveVideoId(firstVideo?.id ?? null);
+    } catch (err: any) {
+      console.error("EbookDetail load error:", err);
+
+      setError(err?.message ?? "Gagal memuat materi.");
+
+      setChapterItems([]);
+
+      setServerProgress(0);
+
+      setActiveVideoId(null);
+    } finally {
+      setLoading(false);
+    }
   }, [chapterId]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Reload setiap screen kembali aktif
+  |--------------------------------------------------------------------------
+  */
+
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Video Items
+  |--------------------------------------------------------------------------
+  */
 
   const videoItems = useMemo(
     () => chapterItems.filter((item) => item.type === "video"),
     [chapterItems],
   );
 
+  /*
+  |--------------------------------------------------------------------------
+  | Filter Items
+  |--------------------------------------------------------------------------
+  */
+
   const filteredItems = useMemo(
     () => chapterItems.filter((item) => item.type === tab),
     [chapterItems, tab],
   );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Header Video
+  |--------------------------------------------------------------------------
+  */
 
   const headerVideo = useMemo(() => {
     if (!videoItems.length) {
@@ -83,17 +166,33 @@ export function useEbookDetail(chapterId: string | number) {
     );
   }, [activeVideoId, videoItems]);
 
-  const progress = useMemo(() => {
-    if (!chapterItems.length) {
-      return 0;
-    }
+  /*
+  |--------------------------------------------------------------------------
+  | Progress
+  |--------------------------------------------------------------------------
+  */
 
-    const done = chapterItems.filter((item) => item.isDone).length;
+  const progress = serverProgress;
 
-    return Math.round((done / chapterItems.length) * 100);
-  }, [chapterItems]);
+  /*
+  |--------------------------------------------------------------------------
+  | Update Progress dari response API
+  |--------------------------------------------------------------------------
+  */
 
-  const markItemDone = (itemId: string) => {
+  const updateProgressFromServer = useCallback((percent: number) => {
+    const normalized = Math.max(0, Math.min(100, Number(percent) || 0));
+
+    setServerProgress(normalized);
+  }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Mark Item Done
+  |--------------------------------------------------------------------------
+  */
+
+  const markItemDone = useCallback((itemId: string) => {
     setChapterItems((previous) =>
       previous.map((item) =>
         item.id === itemId
@@ -104,20 +203,56 @@ export function useEbookDetail(chapterId: string | number) {
           : item,
       ),
     );
-  };
+  }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Return
+  |--------------------------------------------------------------------------
+  */
 
   return {
+    /*
+     * Tab
+     */
     tab,
     setTab,
+
+    /*
+     * Items
+     */
     chapterItems,
     filteredItems,
     videoItems,
+
+    /*
+     * Header
+     */
     headerVideo,
+
+    /*
+     * Active video
+     */
     activeVideoId,
     setActiveVideoId,
+
+    /*
+     * Progress
+     */
     progress,
+    updateProgressFromServer,
+
+    /*
+     * State
+     */
     loading,
     error,
+
+    /*
+     * Actions
+     */
     markItemDone,
+
+    reload: load,
   };
 }

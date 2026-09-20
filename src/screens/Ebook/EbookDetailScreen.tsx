@@ -1,6 +1,9 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
+
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
 import { ActivityIndicator, FlatList, Text } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
@@ -9,10 +12,15 @@ import {
   ChapterTab,
   ChapterTimelineItem,
 } from "../../components/EBook/EbookDetail";
+
 import VideoPreviewHeader from "../../components/EBook/EbookDetail/VideoPreviewHeader";
+
 import { useEbookDetail } from "../../hooks/useEbookDetail";
+
 import { RootStackParamList } from "../../navigation/types";
+
 import { markPdfDone, markVideoDone } from "../../services/progressService";
+
 import { isItemLocked } from "../../utils/ebookLock";
 
 export default function EbookDetailScreen() {
@@ -23,23 +31,51 @@ export default function EbookDetailScreen() {
 
   const { chapterId, title, subtitle } = route.params;
 
+  /*
+  |--------------------------------------------------------------------------
+  | Normalize Chapter ID
+  |--------------------------------------------------------------------------
+  */
+
   const numericChapterId =
     typeof chapterId === "string"
       ? Number(chapterId.replace("c-", ""))
       : Number(chapterId);
 
+  /*
+  |--------------------------------------------------------------------------
+  | Ebook Detail Hook
+  |--------------------------------------------------------------------------
+  */
+
   const {
     tab,
     setTab,
+
     headerVideo,
+
     filteredItems,
+
     chapterItems,
+
     setActiveVideoId,
+
     progress,
+
+    updateProgressFromServer,
+
     loading,
+
     error,
+
     markItemDone,
   } = useEbookDetail(numericChapterId);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Loading
+  |--------------------------------------------------------------------------
+  */
 
   if (loading) {
     return (
@@ -62,6 +98,12 @@ export default function EbookDetailScreen() {
       </SafeAreaView>
     );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Error
+  |--------------------------------------------------------------------------
+  */
 
   if (error) {
     return (
@@ -86,6 +128,12 @@ export default function EbookDetailScreen() {
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Screen
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <SafeAreaView
       style={{
@@ -93,13 +141,25 @@ export default function EbookDetailScreen() {
         backgroundColor: "#fff",
       }}
     >
+      {/* ----------------------------------------------------------------- */}
+      {/* Header                                                            */}
+      {/* ----------------------------------------------------------------- */}
+
       <ChapterHeader title={title} />
+
+      {/* ----------------------------------------------------------------- */}
+      {/* Progress                                                          */}
+      {/* ----------------------------------------------------------------- */}
 
       <ChapterProgressCard
         title={title}
         subtitle={subtitle}
         progress={progress}
       />
+
+      {/* ----------------------------------------------------------------- */}
+      {/* Video Preview                                                     */}
+      {/* ----------------------------------------------------------------- */}
 
       {headerVideo && (
         <VideoPreviewHeader
@@ -112,7 +172,15 @@ export default function EbookDetailScreen() {
         />
       )}
 
+      {/* ----------------------------------------------------------------- */}
+      {/* Tab                                                               */}
+      {/* ----------------------------------------------------------------- */}
+
       <ChapterTab active={tab} onChange={setTab} />
+
+      {/* ----------------------------------------------------------------- */}
+      {/* Items                                                             */}
+      {/* ----------------------------------------------------------------- */}
 
       <FlatList
         data={filteredItems ?? []}
@@ -121,57 +189,138 @@ export default function EbookDetailScreen() {
           padding: 20,
         }}
         renderItem={({ item }) => {
+          /*
+          |--------------------------------------------------------------------------
+          | Lock
+          |--------------------------------------------------------------------------
+          */
+
           const isLocked = isItemLocked(item, chapterItems);
 
           return (
             <ChapterTimelineItem
               title={item.title}
               duration={item.duration}
-              done={item.isDone}
+              done={Boolean(item.isDone)}
               locked={isLocked}
               type={item.type}
               youtubeId={item.youtubeId ?? undefined}
               onPress={async () => {
+                /*
+                |--------------------------------------------------------------------------
+                | Locked
+                |--------------------------------------------------------------------------
+                */
+
                 if (isLocked) {
                   return;
                 }
 
                 try {
+                  /*
+                  |--------------------------------------------------------------------------
+                  | VIDEO
+                  |--------------------------------------------------------------------------
+                  */
+
                   if (item.type === "video") {
                     setActiveVideoId(item.id);
-
-                    markItemDone(item.id);
 
                     const videoId =
                       item.resourceId ?? Number(item.id.replace("v-", ""));
 
-                    await markVideoDone(String(numericChapterId), videoId);
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Server terlebih dahulu
+                    |--------------------------------------------------------------------------
+                    */
+
+                    const result = await markVideoDone(
+                      String(numericChapterId),
+                      videoId,
+                    );
+
+                    markItemDone(item.id);
+
+                    if (result.data) {
+                      updateProgressFromServer(result.data.progressPercent);
+                    }
+
+                    return;
                   }
+
+                  /*
+                  |--------------------------------------------------------------------------
+                  | PDF / RANGKUMAN
+                  |--------------------------------------------------------------------------
+                  */
 
                   if (item.type === "rangkuman") {
                     const pdfId =
                       item.resourceId ?? Number(item.id.replace("r-", ""));
 
-                    await markPdfDone(String(numericChapterId), pdfId);
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Simpan progress ke server
+                    |--------------------------------------------------------------------------
+                    */
+
+                    const result = await markPdfDone(
+                      String(numericChapterId),
+                      pdfId,
+                    );
 
                     markItemDone(item.id);
 
+                    if (result.data) {
+                      updateProgressFromServer(result.data.progressPercent);
+                    }
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Buka PDF
+                    |--------------------------------------------------------------------------
+                    */
+
                     navigation.navigate("MateriDetail", {
                       title: item.title,
+
                       pdfUrl: item.pdfUrl ?? "",
+
                       resourceId: pdfId,
+
                       requiresAuth: Boolean(item.requiresAuth),
                     });
+
+                    return;
                   }
+
+                  /*
+                  |--------------------------------------------------------------------------
+                  | QUIZ
+                  |--------------------------------------------------------------------------
+                  */
 
                   if (item.type === "kuis") {
                     navigation.navigate("Quiz", {
                       chapterId: String(numericChapterId),
+
                       source: "quiz",
                     });
+
+                    return;
                   }
-                } catch (err) {
-                  console.log("progress error:", err);
+                } catch (err: any) {
+                  /*
+                  |--------------------------------------------------------------------------
+                  | Progress gagal
+                  |--------------------------------------------------------------------------
+                  |
+                  | Jangan tandai item sebagai selesai
+                  | jika server gagal.
+                  |--------------------------------------------------------------------------
+                  */
+
+                  console.error("Progress error:", err);
                 }
               }}
             />
