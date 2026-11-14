@@ -18,6 +18,8 @@ export const styles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "#2E7D32",
   },
 
   name: {

@@ -1,12 +1,12 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import { View, Text, StyleSheet } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { StyleSheet, Text } from "react-native";
 
-import HomeTab from "./HomeTab";
-import EbookTab from "./EbookTab";
-import AktivitasTab from "./AktivitasTab";
 import ProfileStack from "../navigation/ProfileStack";
 import Colors from "../theme/colors";
+import AktivitasTab from "./AktivitasTab";
+import EbookTab from "./EbookTab";
+import HomeTab from "./HomeTab";
 
 const Tab = createBottomTabNavigator();
 

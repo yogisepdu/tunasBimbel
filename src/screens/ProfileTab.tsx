@@ -1,13 +1,13 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  View,
-  Text,
   Image,
-  TouchableOpacity,
-  ScrollView,
   Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { styles } from "../assets/styles/ProfileStyles";
 import MenuItem from "../components/MenuProfile/MenuItem";
 import Section from "../components/MenuProfile/Section";
@@ -17,9 +17,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ProfileStackParamList } from "../navigation/ProfileStack";
 import { apiFetch } from "../services/api";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomAlert from "../components/CustomAlert";
 import { useAlert } from "../hooks/useAlert";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { resetToLogin } from "../navigation/navigationRef";
 
 type NavigationProp = NativeStackNavigationProp<
@@ -76,7 +76,7 @@ const ProfileTab: React.FC = () => {
         {/* HEADER */}
         <View style={styles.header}>
           <Image
-            source={{ uri: "https://i.pravatar.cc/300" }}
+            source={require("../assets/tunas-logo.png")}
             style={styles.avatar}
           />
 
