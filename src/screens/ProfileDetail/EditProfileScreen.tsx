@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
+  Image,
   ScrollView,
+  Text,
   TextInput,
   TouchableOpacity,
-  Image,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { styles } from "../../assets/styles/EditProfileStyles";
 import { Dropdown } from "react-native-element-dropdown";
+import { styles } from "../../assets/styles/EditProfileStyles";
 import { useWilayah } from "../../hooks/useWilayah";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -144,12 +144,9 @@ const EditProfileScreen: React.FC = () => {
         {/* AVATAR */}
         <View style={styles.avatarContainer}>
           <Image
-            source={{ uri: "https://i.pravatar.cc/300" }}
+            source={require("../../assets/tunas-logo.png")}
             style={styles.avatar}
           />
-          <TouchableOpacity style={styles.cameraButton}>
-            <Ionicons name="camera" size={18} color="#fff" />
-          </TouchableOpacity>
         </View>
 
         {/* EMAIL */}

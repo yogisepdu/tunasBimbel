@@ -30,6 +30,9 @@ export const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
+    marginBottom: 2,
+    borderWidth: 2,
+    borderColor: "#2E7D32",
   },
 
   cameraButton: {
@@ -152,5 +155,4 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999",
   },
-
 });
